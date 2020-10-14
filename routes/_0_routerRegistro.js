@@ -216,4 +216,6 @@ router.post('/rsnd', function (req, res) {
   sendMailConfirm(createEmailToken(req.body.nameValuePairs.email), req.body.nameValuePairs.email);
   res.status(200);
 });
+
+//test
 module.exports = router;
