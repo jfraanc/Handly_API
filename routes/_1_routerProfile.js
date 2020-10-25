@@ -186,8 +186,8 @@ router.post('/addfeedback', function (req, res) {
     feedback_rate: req.body.nameValuePairs.feedback_rate,
     comentario: req.body.nameValuePairs.comentario
   }
-  
-  User.findOneAndUpdate({ '_id': req.body.nameValuePairs.idCandidato },
+  const idInteresado = req.body.nameValuePairs.idCandidato 
+  User.findOneAndUpdate({ '_id': idInteresado},
     {
       $push: { 'valoracion': feedback }
     }, function (err, Data) {
@@ -195,6 +195,24 @@ router.post('/addfeedback', function (req, res) {
         if (Data != null) {
           console.log('Valoración agregada con exito' + Data);
           res.status(200).json({ msg: "feedback agregado correctamente" });
+          //Establecemos la clave valoracion_state en false porque para evitar que valore mas de una vez al candidato
+          User.findOneAndUpdate({
+            '_id': feedback.idAnunciante,
+            'Apublicados': { $elemMatch: { idA: feedback.idAnuncio, 'candidatos': { $elemMatch: { Id: idInteresado } } } },
+          },
+            {
+              $set: { 'Apublicados.$.candidatos.$[x].valoracion_state': false },
+              returnNewDocument: true
+            }, {
+            arrayFilters: [{ 'x.Id': idInteresado }]
+          }, function (err, dato) {
+            if (!err && dato != null) {
+              //Todo ha ido genial
+            } else {
+              console.log('Ha habido un putisisiismo error ' + err);
+            }
+
+          });
         } else {
           console.log('Router profile ChangePass Antigua Contraseña incorrecta');
           res.status(404).json({ msg: "usuario no existe?" });

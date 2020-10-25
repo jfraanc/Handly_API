@@ -32,7 +32,7 @@ io.on('connection', function (socket) {
           // Si todo va bien
           var AnunRecibido = {
             idAnunciante: decoded.sub
-            , name:jsonAnuncio.name
+            , name: jsonAnuncio.name
             , peticion: jsonAnuncio.peticion
             , leido: false
             , estado: jsonAnuncio.estado
@@ -71,15 +71,15 @@ io.on('connection', function (socket) {
     }
   });
   //Aqui administramos las peticiones de los usuarios para aceptar o rechazar los anuncios
-  socket.on('dealer', function (idA_tokenUser, callback) {
-    jwt.verify(idA_tokenUser.token, 'ilovelondon', function (err, decoded) {
+  socket.on('dealer', function (jsonUserInteresado, callback) {
+    jwt.verify(jsonUserInteresado.token, 'ilovelondon', function (err, decoded) {
       if (err) {
         callback({
           status: 502
         });
       }
       else {
-        dealer(decoded.sub, idA_tokenUser.idA, socket, callback);
+        dealer(decoded.sub, jsonUserInteresado.idA, jsonUserInteresado.date, jsonUserInteresado.hora, socket, callback);
       }
     });
   });
@@ -102,8 +102,8 @@ io.on('connection', function (socket) {
   //Subir foto avatar
   socket.on('avatar', function (json, callback) {
     updateAvatar(json.token, json.url, callback)
-});
- 
+  });
+
   //Get Candidato
   socket.on('candidato', function (json, callback) {
     console.log("RealTime CONSIGUIENDO CANDIDATO")

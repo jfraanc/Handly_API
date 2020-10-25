@@ -37,8 +37,8 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
   const DISTANCIA = 20000; //20 km
   //Por el momento vamos a buscar en toda la base de datos y luego hacemos el filtrado,
   // tengo que implementar el buscar por ciudad de esta forma haríamos una busquedad mas efectiva
-  User.find({ $and: [ { firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "" } },{ ['coord.lon']: { $ne: "" } } ] } , (err, data) => {
-    
+  User.find({ $and: [{ firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "" } }, { ['coord.lon']: { $ne: "" } }] }, (err, data) => {
+
     console.log('Todos los usuarios encontrados ' + util.inspect(data, {
       showHidden: false
       , depth: null
@@ -50,7 +50,7 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
       for (var i = 0; i < data.length; i++) {
 
         //console.log('algoritmos find user IDEMISOR '+idEmisor)
-       
+
         if (data[i]._id != idEmisor) {
           var user = {
             _id: data[i]._id
@@ -93,16 +93,16 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
 
           for (var i = 0; i < UsersNear.length; i++) {
             //Reajustamos el anuncio en recibido Type=13 y le agregamos una clave de petición que es el estado de respuesta que el receptor da sobre el anuncio
-            var distanciaPorUsuario =""
-            if (UsersNear[i].distance<1000){
+            var distanciaPorUsuario = ""
+            if (UsersNear[i].distance < 1000) {
               distanciaPorUsuario = "menos de 1 km"
-            }else{
-              distanciaPorUsuario = Math.round(UsersNear[i].distance/1000) + " km"
+            } else {
+              distanciaPorUsuario = Math.round(UsersNear[i].distance / 1000) + " km"
             }
 
             var Anuncio_Emitido = {
               idAnunciante: anuncio.idAnunciante
-              , name:anuncio.name
+              , name: anuncio.name
               , estado: anuncio.estado
               , categoria: anuncio.categoria
               , type: 13
@@ -123,23 +123,23 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
               , peticion: false //false = Pendiente de aceptación, true aceptado
             };
             //A partir de aqui enviamos la notificacion a todos lo usuarios cercanos
-            
-              User.findOneAndUpdate({
-                '_id': UsersNear[i]._id
-              }, {
-                $push: {
-                  Arecibidos: Anuncio_Emitido
-                }
-              }, function (err, dato) {
-                if (!err) {
-                  //No hace falta enviar notificacion porque el usuario tiene la app abierta al emitir el anuncio, y le llega 
-                  //a traves del evento por el cual emitió el anuncio
-                  callback({
-                    status: 200
-                  });
-                  console.log('Ningún error al asociar el anuncio recibido a los candidatos')
-                }
-              });
+
+            User.findOneAndUpdate({
+              '_id': UsersNear[i]._id
+            }, {
+              $push: {
+                Arecibidos: Anuncio_Emitido
+              }
+            }, function (err, dato) {
+              if (!err) {
+                //No hace falta enviar notificacion porque el usuario tiene la app abierta al emitir el anuncio, y le llega 
+                //a traves del evento por el cual emitió el anuncio
+                callback({
+                  status: 200
+                });
+                console.log('Ningún error al asociar el anuncio recibido a los candidatos')
+              }
+            });
 
 
 
@@ -214,8 +214,9 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
 };
 module.exports.findUsers = findUsers;
 //Manejador de tratos entre los usuarios, y notificación
-function dealer(idInteresado, idA, socket, callback) {
+function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
   const candidatos_max = 3
+  //Primero buscamos el json del anunciante
   User.findOne({
     'Apublicados': {
       $elemMatch: {
@@ -265,13 +266,14 @@ function dealer(idInteresado, idA, socket, callback) {
         Id: dataANUNCIANTE._id
         , Avatar: dataANUNCIANTE.avatar
         , Nombre: dataANUNCIANTE.name
-        , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
+        , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim(),
+        valoracion_state: false
       }
 
       User.findOneAndUpdate({ '_id': idInteresado, 'Arecibidos': { $elemMatch: { idA: idA } } }, {
 
-        $push: { ['Arecibidos' + '.$.candidatos']: Candidato_Anunciante },
-        $set: { ['Arecibidos' + '.$.peticion']: true }
+        $push: { 'Arecibidos.$.candidatos': Candidato_Anunciante },
+        $set: { 'Arecibidos.$.peticion': true }
 
       }, function (err, dataInteresado) {
         if (!err) {
@@ -281,12 +283,14 @@ function dealer(idInteresado, idA, socket, callback) {
             Id: idInteresado
             , Avatar: dataInteresado.avatar
             , Nombre: dataInteresado.name
-            , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
+            , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim(),
+            valoracion_state: false
+
           }
 
           User.findOneAndUpdate({ '_id': dataANUNCIANTE._id, 'Apublicados': { $elemMatch: { idA: idA } } }, {
 
-            $push: { ['Apublicados' + '.$.candidatos']: Candidato_Interesado }
+            $push: { ['Apublicados.$.candidatos']: Candidato_Interesado }
 
           }, function (err, datosAnunciante_Actualizado) {
 
@@ -316,10 +320,10 @@ function dealer(idInteresado, idA, socket, callback) {
                 //Enviamos una notificación al anunciante
                 const message_notification = {
                   notification: {
-                    priority:"high",
+                    priority: "high",
                     title: dataInteresado.name,
                     body: " Ha aceptado el trato!",
-                    sound : "default"
+                    sound: "default"
                   }
                 };
                 adminFirebase.messaging().sendToDevice(dataANUNCIANTE.firebase_token, message_notification, notification_options)
@@ -338,13 +342,69 @@ function dealer(idInteresado, idA, socket, callback) {
               if (datosAnunciante_Actualizado.Apublicados[findPost(datosAnunciante_Actualizado.Apublicados, "idA", idA)].candidatos.length + 1 == candidatos_max) {
                 User.findOneAndUpdate({ '_id': dataANUNCIANTE._id, 'Apublicados': { $elemMatch: { idA: idA } } }, {
 
-                  $set: { ['Apublicados' + '.$.estado']: false }
+                  $set: { ['Apublicados.$.estado']: false }
 
                 }, function (err, dato) {
                   if (err) console("Ha habido un error al actualizar estado de anuncio")
                   console.log('DEALER ' + dato)
                 });
               }
+
+              //Creamos el evento valoración, el cual se activará 24 horas después de la realización del trato
+              const delay_valoracion = 86400000 
+              let future_date = Date.parse(Fecha + ' ' + Hora) + delay_valoracion
+              let ts = future_date - Date.now();
+              let date_ob = new Date(future_date);
+              let day = date_ob.getDate();
+              let month = date_ob.getMonth() + 1;
+              let year = date_ob.getFullYear();
+              // current hours
+              let hours = date_ob.getHours();
+              // current minutes
+              let minutes = date_ob.getMinutes();
+              // current seconds
+              let seconds = date_ob.getSeconds();
+              // prints date & time in YYYY-MM-DD format
+              console.log(future_date + ' --' + year + "-" + month + "-" + day + " // " + hours + ':' + minutes + ':' + seconds);
+              //Esto se ejecutará 27 horas después de que el trato suceda.
+              setTimeout(function () {
+                User.findOneAndUpdate({
+                  '_id': dataANUNCIANTE,
+                  'Apublicados': { $elemMatch: { idA: idA, 'candidatos': { $elemMatch: { Id: idInteresado } } } },
+                },
+                  {
+                    $set: { 'Apublicados.$.candidatos.$[x].valoracion_state': true },
+                    returnNewDocument: true
+                  }, {
+                  arrayFilters: [{ 'x.Id': idInteresado }]
+                }, function (err, dato) {
+                  if (!err && dato != null) {
+                    //Mandamos notificación al usuario al Anunciante (emisor)
+
+                    const message_notification = {
+                      notification: {
+                        priority: "high",
+                        title: 'A ' + dataInteresado.name,
+                        body: "Le gustaría que le dejaras una valoración",
+                        sound: "default"
+                      }
+                    };
+                    adminFirebase.messaging().sendToDevice(dataANUNCIANTE.firebase_token, message_notification, notification_options)
+                      .then(response => {
+                        console.log('Algoritmos dealer notificacion enviada al usuario de ha aceptado el trato')
+                        //response.status(200).send("Algoritmos FindUser notification Notification sent successfully")
+                      })
+                      .catch(error => {
+                        console.log(error);
+                      });
+
+                  } else {
+                    console.log('Ha habido un putisisiismo error ' + err);
+                  }
+
+                });
+              }, ts);
+
             } else {
               //callback 502
               callback({
@@ -641,10 +701,10 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                         //(pero como no sabemos si esta o no conectado lo enviamos)
                         const message_notification = {
                           notification: {
-                            priority:"high",
+                            priority: "high",
                             title: obj.name,
                             body: obj.msg,
-                            sound : "default"
+                            sound: "default"
                           }
                         };
                         adminFirebase.messaging().sendToDevice(data.firebase_token, message_notification, notification_options)
