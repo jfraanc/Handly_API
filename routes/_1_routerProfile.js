@@ -14,6 +14,7 @@ router.get('/', function (req, res) {
   res.redirect('profile/app');
 });
 router.post('/app', function (req, res, next) {
+  console.log('SIZE/app '+req.socket.bytesRead);
   User.findOne({
     '_id': req.id
   }, function (err, Data) {
@@ -41,6 +42,7 @@ router.post('/app', function (req, res, next) {
   });
 });
 router.post('/getanuncios', function (req, res) {
+  console.log('SIZE/getanuncios'+req.socket.bytesRead);
   User.findOne({
     '_id': req.id
   }, function (err, dato) {
@@ -75,6 +77,7 @@ router.post('/getanuncios', function (req, res) {
   });
 });
 router.post('/conversation', function (req, res) {
+  console.log('SIZE/conversation'+req.socket.bytesRead);
   const room_id = req.body.nameValuePairs.roomChat_id;
   console.log('Esta es la room id > ' + room_id);
   Chat.findOne({
@@ -97,6 +100,7 @@ router.post('/conversation', function (req, res) {
   });
 });
 router.post('/updatelocation', function (req, res) {
+  console.log('SIZE/updatelocation '+req.socket.bytesRead);
   const lat = req.body.nameValuePairs.lat;
   const lon = req.body.nameValuePairs.lon;
   User.findOneAndUpdate({
@@ -115,6 +119,7 @@ router.post('/updatelocation', function (req, res) {
   });
 });
 router.post('/updatedata', function (req, res) {
+  console.log('SIZE/updatedata'+req.socket.bytesRead);
   User.findOneAndUpdate({
     '_id': req.id
   }, {
@@ -133,6 +138,7 @@ router.post('/updatedata', function (req, res) {
   });
 });
 router.post('/upfirebase', function (req, res) {
+  console.log('SIZE/upfirebase'+req.socket.bytesRead);
   console.log("_routerprofile_ + firebasetoken " + req.body.nameValuePairs.firebase_token)
   User.findOneAndUpdate({
     '_id': req.id
@@ -151,6 +157,7 @@ router.post('/upfirebase', function (req, res) {
   });
 });
 router.post('/changepass', function (req, res) {
+  console.log('SIZE/changepass '+req.socket.bytesRead);
   const oldpass = req.body.nameValuePairs.oldPass;
   console.log('router Profile change pass old pass ' + oldpass);
   const newpass = req.body.nameValuePairs.newPass;
@@ -176,6 +183,7 @@ router.post('/changepass', function (req, res) {
     });
 });
 router.post('/addfeedback', function (req, res) {
+  console.log('SIZE/addfeedback '+req.socket.bytesRead);
   const feedback =
   {
     idAnuncio: req.body.nameValuePairs.idAnuncio,
