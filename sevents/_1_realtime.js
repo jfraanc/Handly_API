@@ -70,7 +70,7 @@ io.on('connection', function (socket) {
       });
     }
   });
-  //Aqui administramos las peticiones de los usuarios para aceptar o rechazar los anuncios
+  //Aqui administramos las peticiones de los usuarios para aceptar o rechazar los anuncios y los candidato
   socket.on('dealer', function (jsonUserInteresado, callback) {
     jwt.verify(jsonUserInteresado.token, 'ilovelondon', function (err, decoded) {
       if (err) {
@@ -125,7 +125,7 @@ io.on('connection', function (socket) {
   socket.on('message', function (msgObjt) {
 
     if (io.sockets.adapter.rooms[msgObjt.roomChat_id] !== undefined) {
-      //Si es igual a 1 significa que estoy en la sala del chat y le tengo que enviar la notificacion
+      //Si es igual a 1 significa que estoy solo en la sala del chat y le tengo que enviar la notificacion
       if (Object.keys(io.sockets.adapter.rooms[msgObjt.roomChat_id].sockets).length == 1) updateStatusAnuncioLeido(msgObjt, true, socket);
     }
 

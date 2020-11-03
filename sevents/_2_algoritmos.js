@@ -4,6 +4,7 @@ var getUsersNear = require('./_3_funcAyudas').getUsersNear;
 var User = require('../models/db').User; //Base de dato de usuario
 var Chat = require('../models/db').chat; //Collection chat conversaciones
 var jwt = require('jsonwebtoken'); // Para Desencriptar el token
+const { object } = require('underscore');
 var adminFirebase = require('../sevents/_4_firebase_config').admin; //Para enviar notificaciones
 //Ponemos todas las notificaiones en alta prioridad
 const notification_options = {
@@ -266,8 +267,9 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
         Id: dataANUNCIANTE._id
         , Avatar: dataANUNCIANTE.avatar
         , Nombre: dataANUNCIANTE.name
-        , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim(),
-        valoracion_state: false
+        , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
+        , leido: false
+        , valoracion_state: false
       }
 
       User.findOneAndUpdate({ '_id': idInteresado, 'Arecibidos': { $elemMatch: { idA: idA } } }, {
@@ -283,8 +285,9 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
             Id: idInteresado
             , Avatar: dataInteresado.avatar
             , Nombre: dataInteresado.name
-            , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim(),
-            valoracion_state: false
+            , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
+            , leido: false
+            , valoracion_state: false
 
           }
 
@@ -351,7 +354,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
               }
 
               //Creamos el evento valoración, el cual se activará 24 horas después de la realización del trato
-              const delay_valoracion = 86400000 
+              const delay_valoracion = 86400000
               let future_date = Date.parse(Fecha + ' ' + Hora) + delay_valoracion
               let ts = future_date - Date.now();
               let date_ob = new Date(future_date);
@@ -366,7 +369,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
               let seconds = date_ob.getSeconds();
               // prints date & time in YYYY-MM-DD format
               console.log(future_date + ' --' + year + "-" + month + "-" + day + " // " + hours + ':' + minutes + ':' + seconds);
-              //Esto se ejecutará 27 horas después de que el trato suceda.
+              //Esto se ejecutará 24 horas después de que el trato suceda.
               setTimeout(function () {
                 User.findOneAndUpdate({
                   '_id': dataANUNCIANTE,
@@ -630,34 +633,55 @@ module.exports.getCandidato = getCandidato
 function updateStatusAnuncioLeido(obj, Notification, socket) {
 
 
-  //Notificacio en false significa que nos acabamos unir o de meter al chat y vamos a poner el estado de mensajes en leido
-  if (!Notification) {
-    obj.typeA == 7 ? TIPO = "Apublicados" : TIPO = "Arecibidos"
-    obj.typeA == 13 ? TIPO = "Arecibidos" : TIPO = "Apublicados"
+
+  if (!Notification) { //ESTAMOS DESCONECTADOS Y NOS UNIMOS A LA ROOM CHAT
+    obj.typeA == TYPE_ANUNCIO_EMITED ? TIPO = "Apublicados" : TIPO = "Arecibidos"
+    obj.typeA == TYPE_ANUNCIO_RECEIVED ? TIPO = "Arecibidos" : TIPO = "Apublicados"
     console.log('ACTUALIZAR LEIDOS AL ENTRAR EN ROOM ' + "NOTIFICATION " + Notification + " tipo " + obj.typeA)
 
-    User.findOneAndUpdate({ [TIPO]: { $elemMatch: { idA: obj.idA } } }, {
+    if (obj.typeA == TYPE_ANUNCIO_EMITED) {
+      User.findOneAndUpdate(
+        { "Apublicados": { $elemMatch: { idA: obj.idA, $elemMatch: { Id: obj.idCandidato } } } },
+        {
+          $set: { 'Apublicados.$.leido': true },
+          $set: { 'Apublicados.$.candidatos.$[x].leido': true }
+        },
+        { arrayFilters: [{ 'x.Id': idCandidato }]}
+        , function (err, dato) {
+          if (err) {
+            //console.log('Error ' + err)
 
-      $set: {
-        [TIPO + '.$.leido']: true
-      }
+          } else {
+            //console.log('USER ' + dato);
+          }
+
+
+        });
+    } else {
+      User.findOneAndUpdate(
+        { "Arecibidos": { $elemMatch: { idA: obj.idA } } }
+        , {
+          $set: { ['Arecibidos.$.leido']: true },
+          $set: { ['Arecibidos.$.candidatos[0].leido']: true },
+          returnNewDocument: true
+        }, function (err, dato) {
+          if (err) {
+            //console.log('Error ' + err)
+
+          } else {
+            //console.log('USER ' + dato);
+          }
+
+
+        });
     }
-      , function (err, dato) {
-        if (err) {
-          //console.log('Error ' + err)
 
-        } else {
-          //console.log('USER ' + dato);
-        }
-
-
-      });
-  } else {
+  } else { //ESTAMOS YA UNIDOS A LA ROOM CHAT Y MANDAMOS UN MENSAJE
     //Si es true, significa que estamos mandando mensajes a una persona desconectada
     console.log('SOLO UNO CONECTADO')
     //Cuando el otro usuario esta desconectado
-    obj.typeA == 7 ? TIPO = "Arecibidos" : TIPO = "Apublicados"
-    obj.typeA == 13 ? TIPO = "Apublicados" : TIPO = "Arecibidos"
+    obj.typeA == TYPE_ANUNCIO_EMITED ? TIPO = "Arecibidos" : TIPO = "Apublicados"
+    obj.typeA == TYPE_ANUNCIO_RECEIVED ? TIPO = "Apublicados" : TIPO = "Arecibidos"
     //Primero buscamos la roomChat que nos va a devolver los ids de los interesados
     Chat.findOne({
       room_id: obj.roomChat_id
@@ -674,12 +698,12 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
               console.log('ID TARJET  ' + tarjet_user);
 
               //Actualizamos el estado de la persona desconectada.
-              User.findOneAndUpdate({ _id: tarjet_user, [TIPO]: { $elemMatch: { idA: obj.idA } } }, {
-
-                $set: {
-                  [TIPO + '.$.leido']: false
-                }
-              }
+              User.findOneAndUpdate(
+                { _id: tarjet_user, [TIPO]: { $elemMatch: { idA: obj.idA, $elemMatch: { Id: obj.idCandidato } } } },
+                {
+                  $set: { [TIPO + '.$.leido']: false },
+                  $set: { [TIPO + '.$.candidatos.$[x].leido']: false }
+                }, { arrayFilters: [{ 'x.Id': idCandidato }] }
                 , function (err, dato) {
                   if (!err) {
                     //Despues de actualizar el estado de la persona desconectada le enviamos una notificación
@@ -687,8 +711,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                       '_id': tarjet_user
                     }, function (err, data) {
                       if (!err) {
-                        console.log('Exito al cambiar estado leido');
-
+                        console.log('Exito al cambiar estado leido')
                         /* Método antiguo enviar notificacion socket.io
                         socket.broadcast.to(data.socket_id).emit('notifications', {
                           notification: 0,
@@ -696,7 +719,6 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                           msg: obj.msg
                         });
                         */
-
                         //Enviamos una notificación a el usuario que no esta en la room_chat 
                         //(pero como no sabemos si esta o no conectado lo enviamos)
                         const message_notification = {
