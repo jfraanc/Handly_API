@@ -5,28 +5,17 @@ mongoose.set('useFindAndModify', false);
 mongoose.set('useCreateIndex', true);
 mongoose.set('useUnifiedTopology', true);
 var Schema = mongoose.Schema;
-//old
-// var options = {
-//   user: 'admin',
-//   pass: 'j2u4a9n2',
-//   useNewUrlParser: true
-// }
-// var uri = 'mongodb://<dbadmin>:<dbj2u4a9n2>@ds013405.mlab.com:13405/deeli'
-// //var uri1 ='mongodb://localhost/base'
-// var db = mongoose.connect(uri, options, function (err) {
-//   if (err) console.log(err);
-// });
 
-//New DATA BASE
+//CONECTION DB
 var options = {
   user: 'Admin',
   pass: 'Camiloseven77*',
   useNewUrlParser: true
 }
-var uri = 'mongodb+srv://Admin:<Camiloseven77*>@handly.fgrux.gcp.mongodb.net/<Handly>?retryWrites=true&w=majority'
-//var uri1 ='mongodb://localhost/base'
+var uri ='mongodb+srv://Admin:<Camiloseven77*>@handly.fgrux.gcp.mongodb.net/<Handly>?retryWrites=true&w=majority'
+//var uri = 'mongodb://127.0.0.1:27017/handly'
 mongoose.connect(uri, options, function (err) {
-  if (err) console.log(err);
+  (err) ? console.log(err) : console.log('conectado a DB-> ');
 });
 
 //___________COLLECTION->Usuarios

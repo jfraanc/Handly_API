@@ -5,6 +5,7 @@ var User = require('../models/db').User; //Base de dato de usuario
 var Chat = require('../models/db').chat; //Collection chat conversaciones
 var jwt = require('jsonwebtoken'); // Para Desencriptar el token
 const { object } = require('underscore');
+const { ObjectId } = require('mongodb');
 var adminFirebase = require('../sevents/_4_firebase_config').admin; //Para enviar notificaciones
 //Ponemos todas las notificaiones en alta prioridad
 const notification_options = {
@@ -104,10 +105,11 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
             var Anuncio_Emitido = {
               idAnunciante: anuncio.idAnunciante
               , name: anuncio.name
+              , peticion: false //false = Pendiente de aceptación, true aceptado
               , estado: anuncio.estado
-              , categoria: anuncio.categoria
               , type: 13
               , leido: false
+              , categoria: anuncio.categoria
               , idA: anuncio.idA
               , titulo: anuncio.titulo
               , descripcion: anuncio.descripcion
@@ -121,7 +123,6 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
               , distancia: distanciaPorUsuario //Personalizamos la distancia de cada usuario
               , uriImg: anuncio.uriImg
               , candidatos: []
-              , peticion: false //false = Pendiente de aceptación, true aceptado
             };
             //A partir de aqui enviamos la notificacion a todos lo usuarios cercanos
 
@@ -264,7 +265,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
       //AGREGAMOS EL ANUNCIO EN  LAS COLLECCIONES DE ANUNCIOS DE AMBOS USUARIOS (ANUNCIANTE Y RECEPTOR)
       // PRIMERO AGREGAMOS LA INFORMACION DEL CANDIDATO ANUNCIANTE EN EL JSON ARRAY "CANDIDATOS" DEL ANUNCIO QUE ESTA EN EL ARRAY ANUNCIOS RECIBIDOS DEL RECEPTOR
       var Candidato_Anunciante = {
-        Id: dataANUNCIANTE._id
+        Id: String(dataANUNCIANTE._id).trim()
         , Avatar: dataANUNCIANTE.avatar
         , Nombre: dataANUNCIANTE.name
         , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
@@ -282,7 +283,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
           // SI TODO HA IDO BIEN 
           //AGREGAMOS USUARIO INTERESADO(RECEPTOR) A LA COLLECTION DE ANUNCIOS PUBLICADOS DEL ANUNCIANTE
           var Candidato_Interesado = {
-            Id: idInteresado
+            Id:String(idInteresado).trim()
             , Avatar: dataInteresado.avatar
             , Nombre: dataInteresado.name
             , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
@@ -293,7 +294,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
 
           User.findOneAndUpdate({ '_id': dataANUNCIANTE._id, 'Apublicados': { $elemMatch: { idA: idA } } }, {
 
-            $push: { ['Apublicados.$.candidatos']: Candidato_Interesado }
+            $push: { 'Apublicados.$.candidatos': Candidato_Interesado }
 
           }, function (err, datosAnunciante_Actualizado) {
 
@@ -304,7 +305,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
               var chatSchemaJson = new Chat({
                 room_id: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
                 , Idanuncio: idA
-                , users: [dataANUNCIANTE._id, idInteresado]
+                , users: [String(dataANUNCIANTE._id), idInteresado.trim()]
                 , conversation: []
               });
               chatSchemaJson.save(function () {
@@ -345,7 +346,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
               if (datosAnunciante_Actualizado.Apublicados[findPost(datosAnunciante_Actualizado.Apublicados, "idA", idA)].candidatos.length + 1 == candidatos_max) {
                 User.findOneAndUpdate({ '_id': dataANUNCIANTE._id, 'Apublicados': { $elemMatch: { idA: idA } } }, {
 
-                  $set: { ['Apublicados.$.estado']: false }
+                  $set: { 'Apublicados.$.estado': false }
 
                 }, function (err, dato) {
                   if (err) console("Ha habido un error al actualizar estado de anuncio")
@@ -640,13 +641,14 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
     console.log('ACTUALIZAR LEIDOS AL ENTRAR EN ROOM ' + "NOTIFICATION " + Notification + " tipo " + obj.typeA)
 
     if (obj.typeA == TYPE_ANUNCIO_EMITED) {
+      console.log('entrando en ' + obj.typeA + ' idAnuncio ' + obj.idA);
       User.findOneAndUpdate(
-        { "Apublicados": { $elemMatch: { idA: obj.idA, $elemMatch: { Id: obj.idCandidato } } } },
+        { "Apublicados": { $elemMatch: { idA: obj.idA, candidatos: { $elemMatch: { Id: obj.idCandidato } } } } },
         {
-          $set: { 'Apublicados.$.leido': true },
-          $set: { 'Apublicados.$.candidatos.$[x].leido': true }
+          $set: { 'Apublicados.$.leido': true, 'Apublicados.$.candidatos.$[x].leido': true },
+          returnNewDocument: true
         },
-        { arrayFilters: [{ 'x.Id': idCandidato }]}
+        { arrayFilters: [{ 'x.Id': obj.idCandidato }] }
         , function (err, dato) {
           if (err) {
             //console.log('Error ' + err)
@@ -661,8 +663,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
       User.findOneAndUpdate(
         { "Arecibidos": { $elemMatch: { idA: obj.idA } } }
         , {
-          $set: { ['Arecibidos.$.leido']: true },
-          $set: { ['Arecibidos.$.candidatos[0].leido']: true },
+          $set: { 'Arecibidos.$.leido': true },
           returnNewDocument: true
         }, function (err, dato) {
           if (err) {
@@ -678,10 +679,10 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
 
   } else { //ESTAMOS YA UNIDOS A LA ROOM CHAT Y MANDAMOS UN MENSAJE
     //Si es true, significa que estamos mandando mensajes a una persona desconectada
-    console.log('SOLO UNO CONECTADO')
     //Cuando el otro usuario esta desconectado
     obj.typeA == TYPE_ANUNCIO_EMITED ? TIPO = "Arecibidos" : TIPO = "Apublicados"
     obj.typeA == TYPE_ANUNCIO_RECEIVED ? TIPO = "Apublicados" : TIPO = "Arecibidos"
+
     //Primero buscamos la roomChat que nos va a devolver los ids de los interesados
     Chat.findOne({
       room_id: obj.roomChat_id
@@ -695,62 +696,64 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
               for (var i = 0; i < dato.users.length; i++) {
                 if (dato.users[i] != decoded.sub) tarjet_user = dato.users[i]
               }
-              console.log('ID TARJET  ' + tarjet_user);
 
               //Actualizamos el estado de la persona desconectada.
               User.findOneAndUpdate(
-                { _id: tarjet_user, [TIPO]: { $elemMatch: { idA: obj.idA, $elemMatch: { Id: obj.idCandidato } } } },
+                { _id: tarjet_user, [TIPO]: { $elemMatch: { idA: obj.idA, candidatos: { $elemMatch: { Id: decoded.sub } } } } },
                 {
-                  $set: { [TIPO + '.$.leido']: false },
-                  $set: { [TIPO + '.$.candidatos.$[x].leido']: false }
-                }, { arrayFilters: [{ 'x.Id': idCandidato }] }
-                , function (err, dato) {
-                  if (!err) {
-                    //Despues de actualizar el estado de la persona desconectada le enviamos una notificación
-                    User.findOne({
-                      '_id': tarjet_user
-                    }, function (err, data) {
-                      if (!err) {
-                        console.log('Exito al cambiar estado leido')
-                        /* Método antiguo enviar notificacion socket.io
-                        socket.broadcast.to(data.socket_id).emit('notifications', {
-                          notification: 0,
-                          name: obj.name,
-                          msg: obj.msg
+                  $set: { [TIPO + '.$.leido']: false, [TIPO + '.$.candidatos.$[x].leido']: false },
+                  returnNewDocument: true
+                }, {
+                  arrayFilters: [{ 'x.Id': decoded.sub }]
+              }, function (err, datoUsuario) {
+                if (!err && datoUsuario != null) {
+                  //console.log('DATO ACTUALIZADO ' + datoUsuario)
+                  //Despues de actualizar el estado de la persona desconectada le enviamos una notificación
+                  User.findOne({
+                    '_id': tarjet_user
+                  }, function (err, data) {
+                    if (!err && data != null) {
+                      console.log('Exito al cambiar estado leido')
+                      /* Método antiguo enviar notificacion socket.io
+                      socket.broadcast.to(data.socket_id).emit('notifications', {
+                        notification: 0,
+                        name: obj.name,
+                        msg: obj.msg
+                      });
+                      */
+                      //Enviamos una notificación a el usuario que no esta en la room_chat 
+                      //(pero como no sabemos si esta o no conectado lo enviamos)
+                      const message_notification = {
+                        notification: {
+                          priority: "high",
+                          title: obj.name,
+                          body: obj.msg,
+                          sound: "default"
+                        }
+                      };
+                      adminFirebase.messaging().sendToDevice(data.firebase_token, message_notification, notification_options)
+                        .then(response => {
+                          //response.status(200).send("Algoritmos FindUser notification Notification sent successfully")
+                          console.log("Enviando mensaje...")
+                        })
+                        .catch(error => {
+                          console.log(error);
                         });
-                        */
-                        //Enviamos una notificación a el usuario que no esta en la room_chat 
-                        //(pero como no sabemos si esta o no conectado lo enviamos)
-                        const message_notification = {
-                          notification: {
-                            priority: "high",
-                            title: obj.name,
-                            body: obj.msg,
-                            sound: "default"
-                          }
-                        };
-                        adminFirebase.messaging().sendToDevice(data.firebase_token, message_notification, notification_options)
-                          .then(response => {
-                            //response.status(200).send("Algoritmos FindUser notification Notification sent successfully")
-                          })
-                          .catch(error => {
-                            console.log(error);
-                          });
 
-                      }
+                    }
 
-                      else {
-                        console.log('eerororo ' + err);
-                      }
-                    });
+                    else {
+                      console.log('eerororo ' + err);
+                    }
+                  });
 
-                  } else {
+                } else {
 
-                    //console.log('Error ' + err)
-                  }
+                  console.log('Error ' + err)
+                }
 
 
-                });
+              });
 
 
             }
