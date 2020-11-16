@@ -106,7 +106,6 @@ io.on('connection', function (socket) {
 
   //Get Candidato
   socket.on('candidato', function (json, callback) {
-    console.log("RealTime CONSIGUIENDO CANDIDATO")
     getCandidato(json.token, json.idCandidato, callback)
   });
 

@@ -266,7 +266,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
       // PRIMERO AGREGAMOS LA INFORMACION DEL CANDIDATO ANUNCIANTE EN EL JSON ARRAY "CANDIDATOS" DEL ANUNCIO QUE ESTA EN EL ARRAY ANUNCIOS RECIBIDOS DEL RECEPTOR
       var Candidato_Anunciante = {
         Id: String(dataANUNCIANTE._id).trim()
-        , Avatar: dataANUNCIANTE.avatar
+        //, Avatar: dataANUNCIANTE.avatar
         , Nombre: dataANUNCIANTE.name
         , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
         , leido: false
@@ -283,8 +283,8 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
           // SI TODO HA IDO BIEN 
           //AGREGAMOS USUARIO INTERESADO(RECEPTOR) A LA COLLECTION DE ANUNCIOS PUBLICADOS DEL ANUNCIANTE
           var Candidato_Interesado = {
-            Id:String(idInteresado).trim()
-            , Avatar: dataInteresado.avatar
+            Id: String(idInteresado).trim()
+            //, Avatar: dataInteresado.avatar
             , Nombre: dataInteresado.name
             , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
             , leido: false
@@ -601,11 +601,13 @@ module.exports.updateAvatar = updateAvatar
 
 function getCandidato(token, idCandidato, callback) {
   jwt.verify(token, 'ilovelondon', function (error, decoded) {
+
     if (!error) {
       User.findOne({
         '_id': idCandidato
       }, function (err, Data) {
         if (!err) {
+          console.log('avatar del candidato a consoultar ' + Data.avatar);
           callback({
             status: 200
             , avatar: Data.avatar
@@ -654,27 +656,33 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
             //console.log('Error ' + err)
 
           } else {
-            //console.log('USER ' + dato);
+            console.log('USER ' + dato);
           }
 
 
         });
     } else {
-      User.findOneAndUpdate(
-        { "Arecibidos": { $elemMatch: { idA: obj.idA } } }
-        , {
-          $set: { 'Arecibidos.$.leido': true },
-          returnNewDocument: true
-        }, function (err, dato) {
-          if (err) {
-            //console.log('Error ' + err)
+      console.log("es un anuncio recibido")
+      jwt.verify(obj.token, 'ilovelondon', function (error, decoded) {
+        if (!error) {
+          User.findOneAndUpdate(
+            { _id: decoded.sub, "Arecibidos": { $elemMatch: { idA: obj.idA } } }
+            , {
+              $set: { 'Arecibidos.$.leido': true },
+              returnNewDocument: true
+            }, function (err, dato) {
+              if (err) {
+                //console.log('Error ' + err)
 
-          } else {
-            //console.log('USER ' + dato);
-          }
+              } else {
+                console.log('USER ' + dato);
+              }
 
 
-        });
+            });
+        } else { console.log('error con el token en actualizar leidos de anuncio recibido') }
+
+      });
     }
 
   } else { //ESTAMOS YA UNIDOS A LA ROOM CHAT Y MANDAMOS UN MENSAJE
@@ -704,7 +712,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                   $set: { [TIPO + '.$.leido']: false, [TIPO + '.$.candidatos.$[x].leido']: false },
                   returnNewDocument: true
                 }, {
-                  arrayFilters: [{ 'x.Id': decoded.sub }]
+                arrayFilters: [{ 'x.Id': decoded.sub }]
               }, function (err, datoUsuario) {
                 if (!err && datoUsuario != null) {
                   //console.log('DATO ACTUALIZADO ' + datoUsuario)
