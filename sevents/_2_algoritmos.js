@@ -34,59 +34,68 @@ function updateSocketId(token, socketId) {
   });
 }
 module.exports.updateSocketId = updateSocketId
-//Buscar usuarios cerca conectados
-function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, callback) {
-  const DISTANCIA = 20000; //20 km
+//Funcion que se llama cuando se publica un anuncio. Buscar usuarios cerca conectados
+function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, anuncio, callback) {
+  console.log('Coordenadas que viene directamente desde el movil del emisor ' + util.inspect(coordEmisorFromPhone, {
+    showHidden: false
+    , depth: null
+  }));
+  const DISTANCIA = 180000; //180 km
   //Por el momento vamos a buscar en toda la base de datos y luego hacemos el filtrado,
   // tengo que implementar el buscar por ciudad de esta forma haríamos una busquedad mas efectiva
-  User.find({ $and: [{ firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "" } }, { ['coord.lon']: { $ne: "" } }] }, (err, data) => {
-
-    console.log('Todos los usuarios encontrados ' + util.inspect(data, {
+  /*User.find({},function(err,UsuarioEmisor){   
+  })*/
+  User.find({ $and: [{ firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "0.0" } }, { 'coord.lon': { $ne: "0.0" } }] }, (err, data) => {
+    /*console.log('Todos los usuarios encontrados ' + util.inspect(data, {
       showHidden: false
       , depth: null
-    }));
+    }));*/
     //SE LO VAMOS A ENVIAR A TODOS LOS USUARIOS
-    if (!err) {
+    if (!err && data != null) {
       var allUsers = []
-      var userTarjet = {};
+      var userEmisor = {};
+      var userEmisorCheckCoord = false;
+      //Primer bucle para comprobar si el usuario que emite el anuncio tiene coordenadas validas
       for (var i = 0; i < data.length; i++) {
+        if (String(data[i]._id).trim() == idEmisor.trim()) userEmisorCheckCoord = true
+      }
+      console.log('IDeMISOR ' + util.inspect(idEmisor, {
+        showHidden: false
+        , depth: null
+      }));
 
-        //console.log('algoritmos find user IDEMISOR '+idEmisor)
+      /*console.log('Todos los usuarios menos los tarjet ' + util.inspect(allUsers, {
+        showHidden: false
+        , depth: null
+      }));*/
 
-        if (data[i]._id != idEmisor) {
-          var user = {
-            _id: data[i]._id
-            , firebase_token: data[i].firebase_token
-            , latitude: data[i].coord.lat
-            , longitude: data[i].coord.lon
-          }
-          //Creamos un array con sus coordenadas y el socket id
-          allUsers.push(user);
-        } else {
+      if (userEmisorCheckCoord == true) {
+        //Si tiene coordenadas validas lo enviamos a los demas
+        for (var i = 0; i < data.length && userEmisorCheckCoord == true; i++) {
 
-          userTarjet = {
-            _id: data[i]._id
-            , firebase_token: data[i].firebase_token
-            , latitude: data[i].coord.lat
-            , longitude: data[i].coord.lon
+          if (data[i]._id != idEmisor) {
+            var userReceiver = {
+              _id: data[i]._id
+              , firebase_token: data[i].firebase_token
+              , latitude: data[i].coord.lat
+              , longitude: data[i].coord.lon
+            }
+            //Creamos un array con sus coordenadas y el socket id
+            allUsers.push(userReceiver);
+          } else {
+
+            userEmisor = {
+              _id: data[i]._id
+              , firebase_token: data[i].firebase_token
+              , latitude: data[i].coord.lat
+              , longitude: data[i].coord.lon
+            }
+
           }
 
         }
-
-      }
-      console.log('Usertarjet ' + util.inspect(userTarjet, {
-        showHidden: false
-        , depth: null
-      }));
-
-      console.log('Todos los usuarios menos el tarjet ' + util.inspect(allUsers, {
-        showHidden: false
-        , depth: null
-      }));
-
-      if (userTarjet.latitude != 0.0 || userTarjet.longitude != 0.0 || userTarjet.latitude != null || userTarjet.longitude != null) {
-        //Conseguimos solo los usuarios conectados dentro de un rango de 20 km  
-        var UsersNear = getUsersNear(userTarjet, allUsers, DISTANCIA);
+        //Conseguimos solo los usuarios conectados dentro de un rango de 180 km  
+        var UsersNear = getUsersNear(userEmisor, allUsers, DISTANCIA);
 
         if (UsersNear !== null && UsersNear.length !== 0) {
           //Y finalmente aquí le enviariamos el anuncio a los usuarios en cuestión
@@ -103,14 +112,13 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
             }
 
             var Anuncio_Emitido = {
-              idAnunciante: anuncio.idAnunciante
+                idA: anuncio.idA
+              , idAnunciante: anuncio.idAnunciante
               , name: anuncio.name
               , peticion: false //false = Pendiente de aceptación, true aceptado
               , estado: anuncio.estado
               , type: 13
-              , leido: false
               , categoria: anuncio.categoria
-              , idA: anuncio.idA
               , titulo: anuncio.titulo
               , descripcion: anuncio.descripcion
               , fecha: anuncio.fecha
@@ -174,6 +182,7 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
             */
           }
           //Si encontramos usuarios cerca, adjuntamos al emisor y avisamos del ok, si no avisamos al emisor                       
+          anuncio.peticion= true
           User.findOneAndUpdate({
             '_id': idEmisor
           }, {
@@ -181,8 +190,8 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
               Apublicados: anuncio
             }
             , 'coord': {
-              lat: userTarjet.latitude
-              , lon: userTarjet.longitude
+              lat: userEmisor.latitude
+              , lon: userEmisor.longitude
             }
           }, function (err, dato) {
             if (!err) {
@@ -216,7 +225,7 @@ function findUsers(name, idEmisor, anuncio, coordTarjet, socket, io, anuncio, ca
 };
 module.exports.findUsers = findUsers;
 //Manejador de tratos entre los usuarios, y notificación
-function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
+function dealer(idInteresado, idA, Fecha, Hora, Distancia, callback) {
   const candidatos_max = 3
   //Primero buscamos el json del anunciante
   User.findOne({
@@ -231,7 +240,6 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
       console.log('Nada error ' + err);
     }
     else if (dataANUNCIANTE == null) { //Esto significa que el anuncio está en false o no existe
-
       //Removemos el anuncio de la colección de anuncios del candidato interesado (receptor)
       User.updateOne({
         _id: idInteresado
@@ -246,7 +254,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
           console.log('Nada error ' + err);
         }
         else if (data == null) { //Esto significa que el anuncio está en false o no existe
-          console.log('Hay algún tipo de error al buscar tu anuncio en la base de datos ');
+          console.log('Hay algún tipo de error al buscar tu anuncio en la base de datos');
           //Aquí le enviaríamos el callback 501
           callback({
             status: 501
@@ -262,9 +270,9 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
 
     }
     else {
-      //AGREGAMOS EL ANUNCIO EN  LAS COLLECCIONES DE ANUNCIOS DE AMBOS USUARIOS (ANUNCIANTE Y RECEPTOR)
-      // PRIMERO AGREGAMOS LA INFORMACION DEL CANDIDATO ANUNCIANTE EN EL JSON ARRAY "CANDIDATOS" DEL ANUNCIO QUE ESTA EN EL ARRAY ANUNCIOS RECIBIDOS DEL RECEPTOR
-      var Candidato_Anunciante = {
+      //AGREGAMOS EL ANUNCIO EN LAS COLLECCIONES DE ANUNCIOS DE AMBOS USUARIOS (ANUNCIANTE Y RECEPTOR)
+      // PRIMERO AGREGAMOS LA INFORMACION LA PERSONA ANUNCIANTE EN EL JSON ARRAY "CANDIDATOS" DEL ANUNCIO QUE ESTA EN EL ARRAY ANUNCIOS RECIBIDOS DEL RECEPTOR
+      var Persona_Anunciante = {
         Id: String(dataANUNCIANTE._id).trim()
         //, Avatar: dataANUNCIANTE.avatar
         , Nombre: dataANUNCIANTE.name
@@ -275,11 +283,11 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
 
       User.findOneAndUpdate({ '_id': idInteresado, 'Arecibidos': { $elemMatch: { idA: idA } } }, {
 
-        $push: { 'Arecibidos.$.candidatos': Candidato_Anunciante },
+        $push: { 'Arecibidos.$.candidatos': Persona_Anunciante },
         $set: { 'Arecibidos.$.peticion': true }
 
       }, function (err, dataInteresado) {
-        if (!err) {
+        if (!err && dataInteresado !== null && dataInteresado !== 'undefined') {
           // SI TODO HA IDO BIEN 
           //AGREGAMOS USUARIO INTERESADO(RECEPTOR) A LA COLLECTION DE ANUNCIOS PUBLICADOS DEL ANUNCIANTE
           var Candidato_Interesado = {
@@ -289,6 +297,7 @@ function dealer(idInteresado, idA, Fecha, Hora, socket, callback) {
             , RoomChat: (dataANUNCIANTE._id + '&' + idInteresado + '&' + idA).trim()
             , leido: false
             , valoracion_state: false
+            , distance: Distancia
 
           }
 
@@ -643,39 +652,40 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
     console.log('ACTUALIZAR LEIDOS AL ENTRAR EN ROOM ' + "NOTIFICATION " + Notification + " tipo " + obj.typeA)
 
     if (obj.typeA == TYPE_ANUNCIO_EMITED) {
-      console.log('entrando en ' + obj.typeA + ' idAnuncio ' + obj.idA);
+      console.log("Es un anuncio recibido. Actualizando leido")
       User.findOneAndUpdate(
         { "Apublicados": { $elemMatch: { idA: obj.idA, candidatos: { $elemMatch: { Id: obj.idCandidato } } } } },
         {
-          $set: { 'Apublicados.$.leido': true, 'Apublicados.$.candidatos.$[x].leido': true },
+          //Establezco el anuncio en no leido en la app, en candidatos adapter
+          $set: { /*'Apublicados.$.leido': true,*/ 'Apublicados.$.candidatos.$[x].leido': true },
           returnNewDocument: true
         },
         { arrayFilters: [{ 'x.Id': obj.idCandidato }] }
         , function (err, dato) {
           if (err) {
-            //console.log('Error ' + err)
+            console.log('Error ' + err)
 
           } else {
-            console.log('USER ' + dato);
+            console.log('Actualizado leido correcto');
           }
 
 
         });
     } else {
-      console.log("es un anuncio recibido")
+      console.log("Es un anuncio recibido. Actualizando leido")
       jwt.verify(obj.token, 'ilovelondon', function (error, decoded) {
         if (!error) {
           User.findOneAndUpdate(
             { _id: decoded.sub, "Arecibidos": { $elemMatch: { idA: obj.idA } } }
             , {
-              $set: { 'Arecibidos.$.leido': true },
+              $set: { 'Arecibidos.$.candidatos.0.leido': true },
               returnNewDocument: true
             }, function (err, dato) {
               if (err) {
-                //console.log('Error ' + err)
+                console.log('Error ' + err)
 
               } else {
-                console.log('USER ' + dato);
+                console.log('Actualizado leido correcto');
               }
 
 
@@ -709,7 +719,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
               User.findOneAndUpdate(
                 { _id: tarjet_user, [TIPO]: { $elemMatch: { idA: obj.idA, candidatos: { $elemMatch: { Id: decoded.sub } } } } },
                 {
-                  $set: { [TIPO + '.$.leido']: false, [TIPO + '.$.candidatos.$[x].leido']: false },
+                  $set: { /*[TIPO + '.$.leido']: false,*/[TIPO + '.$.candidatos.$[x].leido']: false },
                   returnNewDocument: true
                 }, {
                 arrayFilters: [{ 'x.Id': decoded.sub }]

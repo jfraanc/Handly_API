@@ -23,7 +23,7 @@ router.post('/add', function (req, res) {
 
   var user = new User({
     socket_id: 'none'
-    , firebase_token: ''
+    , firebase_token: req.body.nameValuePairs.firebaseToken
     , avatar: ''
     , name: req.body.nameValuePairs.name
     , email: req.body.nameValuePairs.email
@@ -36,8 +36,8 @@ router.post('/add', function (req, res) {
     , Apublicados: []
     , Arecibidos: []
     , coord: {
-      lat: ''
-      , lon: ''
+      lat: '0.0'
+      , lon: '0.0'
     }
   });
   if (req.body.nameValuePairs.password == req.body.nameValuePairs.password_confirmation) {
@@ -50,6 +50,7 @@ router.post('/add', function (req, res) {
           console.log('El usuario ha sido registrado---Enviando email---');
           //Enviamos un email con su token creado a partir de su email con segundo token 
           if (!err || userSaved != null) {
+            console.log('asdfasd '+req.body.nameValuePairs.email)
             sendMailConfirm(createEmailToken(req.body.nameValuePairs.email), req.body.nameValuePairs.email)
             res.status(200).json({
               message: 'Enjoy your token!'
@@ -151,31 +152,7 @@ if(req.body.nameValuePairs.email != null){
     });
   }
 });
-//Consulta si el email está en true
-router.post('/ismailconfirm', function (req, res) {
-  User.findOne({
-    email: req.body.nameValuePairs.email
-  }, function (err, User) {
-    if (err) throw err;
-    if (!User) {
-      res.status(401).json({
-        success: false
-        , message: 'Authentication failed. User not found.'
-      });
-    }
-    else if (User) {
-      if (User.emailConfirmation == false) {
-        res.status(300).json({
-          success: false
-          , message: 'Email no confirmado'
-        });
-      }
-      else if (User.emailConfirmation == true) res.status(200).json({
-        message: 'Great'
-      });
-    }
-  });
-});
+
 //Email Confirmation
 router.get('/mailcnf/:id', function (req, res) {
   //Decodificar el tokenEmail del usuario para que nos devuleva el email y poder buscarlo en la base de datos

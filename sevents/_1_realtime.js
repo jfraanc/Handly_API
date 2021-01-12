@@ -71,15 +71,15 @@ io.on('connection', function (socket) {
     }
   });
   //Aqui administramos las peticiones de los usuarios para aceptar o rechazar los anuncios y los candidato
-  socket.on('dealer', function (jsonUserInteresado, callback) {
-    jwt.verify(jsonUserInteresado.token, 'ilovelondon', function (err, decoded) {
+  socket.on('dealer', function (jsonUserCandidato, callback) {
+    jwt.verify(jsonUserCandidato.token, 'ilovelondon', function (err, decoded) {
       if (err) {
         callback({
           status: 502
         });
       }
       else {
-        dealer(decoded.sub, jsonUserInteresado.idA, jsonUserInteresado.date, jsonUserInteresado.hora, socket, callback);
+        dealer(decoded.sub, jsonUserCandidato.idA, jsonUserCandidato.date, jsonUserCandidato.hora, jsonUserCandidato.distancia, callback);
       }
     });
   });

@@ -1,5 +1,6 @@
 const util = require('util');
-var url_api = 'https://handlyapi.herokuapp.com/';
+var url_api = 'http://localhost:3000/';
+//var url_api = 'https://handlyapi.herokuapp.com/';
 function findPost(obj, key, key_val) {
   for (var i = 0; i < obj.length; i++) {
     if (obj[i][key] == key_val) {
@@ -13,16 +14,13 @@ module.exports.findPost = findPost;
 function getUsersNear(tarjet, UsersConnected, limit) { //El límite en metros
   var geolib = require('geolib');
   //Los ordenamos de menor a mayor respecto a la distancia del emisor o anunciante
+
   var objt = geolib.orderByDistance({
     latitude: tarjet.latitude
     , longitude: tarjet.longitude
   }, UsersConnected);
   //Recorremos el array hasta el límite de distancia que queramos por ejemplo 30 km.
   
-  console.log('putaMaddreeGEO ' + util.inspect(objt, {
-    showHidden: false
-    , depth: null
-  }));
   var ArrayFinal = [];
   for (var i = 0; i < objt.length; i++) {
 
@@ -41,6 +39,7 @@ function getUsersNear(tarjet, UsersConnected, limit) { //El límite en metros
     , depth: null
   }));
   return ArrayFinal;
+
 }
 module.exports.getUsersNear = getUsersNear
 
@@ -48,14 +47,14 @@ module.exports.getUsersNear = getUsersNear
   function sendMailConfirm(tokenEmail, email) {
     var nodemailer = require('nodemailer');
     var transporter = nodemailer.createTransport({
-      service: 'gmail'
+      service: 'hotmail'
       , auth: {
-        user: 'handly.ask@gmail.com'
+        user: 'handly.ask@outlook.com'
         , pass: 'j2u4a9n2'
       }
     });
     const mailOptions = {
-      from: 'handly.ask@gmail.com', // sender address
+      from: 'handly.ask@outlook.com', // sender address
       to: email, // list of receivers
       subject: 'Activar cuenta Handly', // Subject line
       html:' <h7> H A N D L Y APP </h7>'+
@@ -72,14 +71,14 @@ module.exports.sendMailConfirm = sendMailConfirm
 function sendMailNewPass(email,newPass) {
   var nodemailer = require('nodemailer');
   var transporter = nodemailer.createTransport({
-    service: 'gmail'
+    service: 'hotmail'
     , auth: {
-      user: 'handly.ask@gmail.com'
+      user: 'handly.ask@outlook.com'
       , pass: 'j2u4a9n2'
     }
   });
   const mailOptions = {
-    from:'handly.ask@gmail.com', // sender address
+    from:'handly.ask@outlook.com', // sender address
     to: email, // list of receivers
     subject: 'Activar cuenta Handly', // Subject line
     html:

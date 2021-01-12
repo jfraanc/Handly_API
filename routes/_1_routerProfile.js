@@ -1,4 +1,5 @@
 /* Aqui hacemos todas operaciones de publicación, actualización o eliminación de anuncios así como la actualización del profile del usuario */
+const LastVersionApp = 4.1
 var express = require('express');
 var router = express.Router();
 var User = require('../models/db').User;
@@ -14,35 +15,73 @@ router.get('/', function (req, res) {
   res.redirect('profile/app');
 });
 router.post('/app', function (req, res, next) {
-  console.log('SIZE/app '+req.socket.bytesRead);
+  console.log('SIZE/app ' + req.socket.bytesRead);
+  var versionApp = req.body.nameValuePairs.VersionApp
+  console.log('VersionApp ' + versionApp)
+  var updateApp = false;
+  if(LastVersionApp == versionApp){
+    updateApp==false
+  }else{updateApp=true}
+  if (!updateApp) {
+    User.findOne({
+      '_id': req.id
+    }, function (err, Data) {
+      if (!err) {
+        if (Data != null) {
+          res.status(200).json({
+            _id: Data.id
+            , socket_id: Data.socket_id
+            , avatar: Data.avatar
+            , name: Data.name
+            , email: Data.email
+            , emailConfirmation: Data.emailConfirmation
+            , tfl: Data.tfl
+            , descrip: Data.descrip
+            , valoracion: Data.valoracion
+            , Arecibidos: Data.Arecibidos
+            , Apublicados: Data.Apublicados
+            ,
+          });
+        }
+        else {
+          res.status(500);
+        }
+      }
+    });
+
+  } else {
+    res.status(777).json({
+      success: false
+      , message: 'It must to update'
+    });
+  }
+});
+router.post('/ismailconfirm', function (req, res) {
   User.findOne({
-    '_id': req.id
-  }, function (err, Data) {
-    if (!err) {
-      if (Data != null) {
-        res.status(200).json({
-          _id: Data.id
-          , socket_id: Data.socket_id
-          , avatar: Data.avatar
-          , name: Data.name
-          , email: Data.email
-          , emailConfirmation: Data.emailConfirmation
-          , tfl: Data.tfl
-          , descrip: Data.descrip
-          , valoracion: Data.valoracion
-          , Arecibidos: Data.Arecibidos
-          , Apublicados: Data.Apublicados
-          ,
+    email: req.body.nameValuePairs.email
+  }, function (err, User) {
+    if (err) throw err;
+    if (!User) {
+      res.status(401).json({
+        success: false
+        , message: 'Authentication failed. User not found.'
+      });
+    }
+    else if (User) {
+      if (User.emailConfirmation == false) {
+        res.status(300).json({
+          success: false
+          , message: 'Email no confirmado'
         });
       }
-      else {
-        res.status(500);
-      }
+      else if (User.emailConfirmation == true) res.status(200).json({
+        message: 'Great'
+      });
     }
   });
 });
 router.post('/getanuncios', function (req, res) {
-  console.log('SIZE/getanuncios'+req.socket.bytesRead);
+  console.log('SIZE/getanuncios' + req.socket.bytesRead);
   User.findOne({
     '_id': req.id
   }, function (err, dato) {
@@ -77,7 +116,7 @@ router.post('/getanuncios', function (req, res) {
   });
 });
 router.post('/conversation', function (req, res) {
-  console.log('SIZE/conversation'+req.socket.bytesRead);
+  console.log('SIZE/conversation' + req.socket.bytesRead);
   const room_id = req.body.nameValuePairs.roomChat_id;
   console.log('Esta es la room id > ' + room_id);
   Chat.findOne({
@@ -100,7 +139,7 @@ router.post('/conversation', function (req, res) {
   });
 });
 router.post('/updatelocation', function (req, res) {
-  console.log('SIZE/updatelocation '+req.socket.bytesRead);
+  console.log('SIZE/updatelocation ' + req.socket.bytesRead);
   const lat = req.body.nameValuePairs.lat;
   const lon = req.body.nameValuePairs.lon;
   User.findOneAndUpdate({
@@ -119,7 +158,7 @@ router.post('/updatelocation', function (req, res) {
   });
 });
 router.post('/updatedata', function (req, res) {
-  console.log('SIZE/updatedata'+req.socket.bytesRead);
+  console.log('SIZE/updatedata' + req.socket.bytesRead);
   User.findOneAndUpdate({
     '_id': req.id
   }, {
@@ -138,7 +177,7 @@ router.post('/updatedata', function (req, res) {
   });
 });
 router.post('/upfirebase', function (req, res) {
-  console.log('SIZE/upfirebase'+req.socket.bytesRead);
+  console.log('SIZE/upfirebase' + req.socket.bytesRead);
   console.log("_routerprofile_ + firebasetoken " + req.body.nameValuePairs.firebase_token)
   User.findOneAndUpdate({
     '_id': req.id
@@ -157,7 +196,7 @@ router.post('/upfirebase', function (req, res) {
   });
 });
 router.post('/changepass', function (req, res) {
-  console.log('SIZE/changepass '+req.socket.bytesRead);
+  console.log('SIZE/changepass ' + req.socket.bytesRead);
   const oldpass = req.body.nameValuePairs.oldPass;
   console.log('router Profile change pass old pass ' + oldpass);
   const newpass = req.body.nameValuePairs.newPass;
@@ -183,7 +222,7 @@ router.post('/changepass', function (req, res) {
     });
 });
 router.post('/addfeedback', function (req, res) {
-  console.log('SIZE/addfeedback '+req.socket.bytesRead);
+  console.log('SIZE/addfeedback ' + req.socket.bytesRead);
   const feedback =
   {
     idAnuncio: req.body.nameValuePairs.idAnuncio,
@@ -194,8 +233,8 @@ router.post('/addfeedback', function (req, res) {
     feedback_rate: req.body.nameValuePairs.feedback_rate,
     comentario: req.body.nameValuePairs.comentario
   }
-  const idInteresado = req.body.nameValuePairs.idCandidato 
-  User.findOneAndUpdate({ '_id': idInteresado},
+  const idInteresado = req.body.nameValuePairs.idCandidato
+  User.findOneAndUpdate({ '_id': idInteresado },
     {
       $push: { 'valoracion': feedback }
     }, function (err, Data) {
