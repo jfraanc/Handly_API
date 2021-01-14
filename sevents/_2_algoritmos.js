@@ -224,6 +224,7 @@ function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, an
   })
 };
 module.exports.findUsers = findUsers;
+
 //Manejador de tratos entre los usuarios, y notificación
 function dealer(idInteresado, idA, Fecha, Hora, Distancia, callback) {
   const candidatos_max = 3
@@ -743,7 +744,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                       //(pero como no sabemos si esta o no conectado lo enviamos)
                       const message_notification = {
                         notification: {
-                          priority: "high",
+                          priority: "medium",
                           title: obj.name,
                           body: obj.msg,
                           sound: "default"

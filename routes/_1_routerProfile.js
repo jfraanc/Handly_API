@@ -4,6 +4,7 @@ var express = require('express');
 var router = express.Router();
 var User = require('../models/db').User;
 var Chat = require('../models/db').chat; //Collection chat conversaciones
+var getUsersNear = require('../sevents/_3_funcAyudas').getUsersNear;
 const util = require('util'); //con este paquete podemos ver por consola un json entero
 /* console.log('DATA ' + util.inspect(jason, {
            showHidden: false
@@ -80,6 +81,86 @@ router.post('/ismailconfirm', function (req, res) {
     }
   });
 });
+router.post('/getcommunity', function (req, res) {
+  console.log('SIZE/getcommuity' + req.socket.bytesRead);
+  const DISTANCIA = 180000
+  const idEmisor = req.id
+  User.find({ $and: [{ firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "0.0" } }, { 'coord.lon': { $ne: "0.0" } }] }, (err, data) => {
+    
+    if (!err && data != null) {
+      var allUsers = []
+      var userEmisor = {};
+      var userEmisorCheckCoord = false;
+      //Primer bucle para comprobar si el usuario que emite el anuncio tiene coordenadas validas
+      for (var i = 0; i < data.length; i++) {
+        if (String(data[i]._id).trim() == idEmisor.trim()) userEmisorCheckCoord = true
+      }
+      console.log('IDeMISOR ' + util.inspect(idEmisor, {
+        showHidden: false
+        , depth: null
+      }));
+
+      /*console.log('Todos los usuarios menos los tarjet ' + util.inspect(allUsers, {
+        showHidden: false
+        , depth: null
+      }));*/
+
+      if (userEmisorCheckCoord == true) {
+        //Si tiene coordenadas validas lo enviamos a los demas
+        for (var i = 0; i < data.length && userEmisorCheckCoord == true; i++) {
+
+          if (data[i]._id != idEmisor) {
+            var userReceiver = {
+              _id: data[i]._id
+              , avatar: data[i].avatar
+              , nombre: data[i].name
+              , descrip: data[i].descrip
+              , latitude: data[i].coord.lat
+              , longitude: data[i].coord.lon
+            }
+            //Creamos un array con sus coordenadas y el socket id
+            allUsers.push(userReceiver);
+          } else {
+
+            userEmisor = {
+              _id: data[i]._id
+              , latitude: data[i].coord.lat
+              , longitude: data[i].coord.lon
+            }
+
+          }
+
+        }
+        //Conseguimos solo los usuarios conectados dentro de un rango de 180 km  
+        var UsersNear = getUsersNear(userEmisor, allUsers, DISTANCIA);
+        /* for (var i = 0; i < UsersNear.length; i++) { //Cambiamos distancia a km
+          UsersNear[i].distance = Math.round(UsersNear[i].distance / 1000)
+        } */
+        if (UsersNear !== null && UsersNear.length !== 0) {
+          res.status(200).json({UsersNear});
+        }
+        else {
+          console.log('No hay usuarios dentro del rango')
+          callback({
+            status: 502
+          });
+        }
+      }
+      else {
+        console.log('No hemos podido obtener tu localización, intentalo de nuevo pasados unos minutos')
+        callback({
+          status: 501
+        });
+      }
+    }
+    else {
+      console.log('Error desconocido, no encuentra ningún usuario')
+      callback({
+        status: 555
+      });
+    }
+  })
+});
 router.post('/getanuncios', function (req, res) {
   console.log('SIZE/getanuncios' + req.socket.bytesRead);
   User.findOne({
@@ -91,7 +172,7 @@ router.post('/getanuncios', function (req, res) {
            showHidden: false
            , depth: null
          }));*/
-        //Aqui publicaremos el anuncio
+        //Todos los anuncios del usuario
         res.status(200).json({
           mode: 'anuncios'
           , success: true

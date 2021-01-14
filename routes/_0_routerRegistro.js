@@ -31,7 +31,7 @@ router.post('/add', function (req, res) {
     , tfl: ''
     , password: req.body.nameValuePairs.password
     , password_confirmation: req.body.nameValuePairs.password_confirmation
-    , descrip: ''
+    , descripcion: ''
     , valoracion: 0
     , Apublicados: []
     , Arecibidos: []

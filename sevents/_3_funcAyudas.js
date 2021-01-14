@@ -11,20 +11,20 @@ function findPost(obj, key, key_val) {
 }
 module.exports.findPost = findPost;
 
-function getUsersNear(tarjet, UsersConnected, limit) { //El límite en metros
+function getUsersNear(UserOrigin, UsersConnected, range) { //El límite en metros
   var geolib = require('geolib');
   //Los ordenamos de menor a mayor respecto a la distancia del emisor o anunciante
 
   var objt = geolib.orderByDistance({
-    latitude: tarjet.latitude
-    , longitude: tarjet.longitude
+    latitude: UserOrigin.latitude
+    , longitude: UserOrigin.longitude
   }, UsersConnected);
   //Recorremos el array hasta el límite de distancia que queramos por ejemplo 30 km.
   
   var ArrayFinal = [];
   for (var i = 0; i < objt.length; i++) {
 
-    if (objt[i].distance != null && objt[i].distance < limit) {
+    if (objt[i].distance != null && objt[i].distance < range) {
         UsersConnected[objt[i].key].distance = objt[i].distance
         ArrayFinal.push(UsersConnected[objt[i].key])  
     }
@@ -34,7 +34,7 @@ function getUsersNear(tarjet, UsersConnected, limit) { //El límite en metros
       break;
     }
   }
-  console.log('putisiisisma array final ' + util.inspect(ArrayFinal, {
+  console.log('Estos son los usuarios más cercanos dentro de un rango de: '+ range + util.inspect(ArrayFinal, {
     showHidden: false
     , depth: null
   }));

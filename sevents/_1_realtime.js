@@ -19,7 +19,9 @@ io.on('connection', function (socket) {
     updateSocketId(msg.token, socket.id);
   });
   socket.on('anuncios', function (jsonAnuncio, callback) {
-    console.log('Este es la CATEGORIA -> ' + jsonAnuncio.categoria);
+
+    const MODE_EMIT_MULTIPLES = "puesbrothers"
+    const MODE_EMIT_SINGLE = "solounbro";
     if (jsonAnuncio != null && jsonAnuncio.token) {
       // verifies secret and checks exp
       jwt.verify(jsonAnuncio.token, 'ilovelondon', function (err, decoded) {
@@ -55,11 +57,16 @@ io.on('connection', function (socket) {
           //No si se comprobar antes si el usuario existe en la base de datos
           //Aqui es donde vamos a elegir los usuarios a los cuales vamos a enviar el anuncio.
           //Dependiendo de la localización, preferencias... A ver como lo hago.
+          //socket.broadcast.emit('anuncios', AnunRecibido); //io.emit para emitir a todos socket.broadcast.emit, para enviar y no devolver
+          
+          if(jsonAnuncio.mode == MODE_EMIT_MULTIPLES){
           findUsers(jsonAnuncio.name, decoded.sub, AnunRecibido, {
-            lat: jsonAnuncio.lat
+              lat: jsonAnuncio.lat
             , lon: jsonAnuncio.lon
           }, socket, io, AnunRecibido, callback);
-          //socket.broadcast.emit('anuncios', AnunRecibido); //io.emit para emitir a todos socket.broadcast.emit, para enviar y no devolver  
+        }else if((jsonAnuncio.mode == MODE_EMIT_SINGLE)){
+              //Método que crearía el chat solo con la persona elegida de la comunidad de usuarios
+        }
         }
       });
     }
