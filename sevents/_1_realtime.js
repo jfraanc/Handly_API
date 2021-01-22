@@ -6,9 +6,11 @@ var rmvAnuncio = require('./_2_algoritmos').rmvAnuncio;
 var dealer = require('./_2_algoritmos').dealer;
 var updateSocketId = require('./_2_algoritmos').updateSocketId;
 var findUsers = require('./_2_algoritmos').findUsers;
+var sendJobtoUser = require('./_2_algoritmos').sendJobtoUser;
 var updateAvatar = require('./_2_algoritmos').updateAvatar;
 var getCandidato = require('./_2_algoritmos').getCandidato;
 var updateStatusAnuncioLeido = require('./_2_algoritmos').updateStatusAnuncioLeido;
+var updateMensajesLeidos = require('./_2_algoritmos').updateMensajesLeidos;
 io.on('connection', function (socket) {
   // Tenemos que actualizar socket_id en el shema del usario cada vez que se conecta
   //De esta manera puedo identificar a los usuarios que están conectados en todo momento 
@@ -50,7 +52,7 @@ io.on('connection', function (socket) {
             , precioHora: jsonAnuncio.precioHora
             , lat: jsonAnuncio.lat
             , lon: jsonAnuncio.lon
-            , distancia: ""
+            , distancia: jsonAnuncio.distancia
             , uriImg: jsonAnuncio.uriImg
             , candidatos: []
           };
@@ -58,15 +60,18 @@ io.on('connection', function (socket) {
           //Aqui es donde vamos a elegir los usuarios a los cuales vamos a enviar el anuncio.
           //Dependiendo de la localización, preferencias... A ver como lo hago.
           //socket.broadcast.emit('anuncios', AnunRecibido); //io.emit para emitir a todos socket.broadcast.emit, para enviar y no devolver
-          
-          if(jsonAnuncio.mode == MODE_EMIT_MULTIPLES){
-          findUsers(jsonAnuncio.name, decoded.sub, AnunRecibido, {
+
+          if (jsonAnuncio.mode == MODE_EMIT_MULTIPLES) {
+            console.log('EMIT multiples')
+            findUsers(jsonAnuncio.name, decoded.sub, AnunRecibido, {
               lat: jsonAnuncio.lat
-            , lon: jsonAnuncio.lon
-          }, socket, io, AnunRecibido, callback);
-        }else if((jsonAnuncio.mode == MODE_EMIT_SINGLE)){
-              //Método que crearía el chat solo con la persona elegida de la comunidad de usuarios
-        }
+              , lon: jsonAnuncio.lon
+            }, socket, io, AnunRecibido, callback);
+          } else if ((jsonAnuncio.mode == MODE_EMIT_SINGLE)) {
+            //Método que crearía el chat solo con la persona elegida de la comunidad de usuarios
+            console.log('EMIT SINGLE')
+            sendJobtoUser(decoded.sub, jsonAnuncio.idCandidato, AnunRecibido, callback)
+          }
         }
       });
     }
@@ -124,47 +129,57 @@ io.on('connection', function (socket) {
       socket.join(room);
       console.log("el user se metio a la rooom")
       //AL UNIRME A LA ROOM SIMPLEMENTE PONGO MI REGISTRO GENERAL DEL ANUNCIO EN TRUE
-      //console.log('JOIN ROOM '+dataRoom.typeA)
       updateStatusAnuncioLeido(dataRoom, false, socket);
+      //Al conectarme a la room chat tengo que actualizar los msg leidos de la otra persona
+      updateMensajesLeidos(dataRoom.roomChat_id, dataRoom.name,socket);   
     }
   });
-  socket.on('message', function (msgObjt) {
-
+  socket.on('message', function (msgObjt, callback) {
+    var LEIDO;
     if (io.sockets.adapter.rooms[msgObjt.roomChat_id] !== undefined) {
       //Si es igual a 1 significa que estoy solo en la sala del chat y le tengo que enviar la notificacion
-      if (Object.keys(io.sockets.adapter.rooms[msgObjt.roomChat_id].sockets).length == 1) updateStatusAnuncioLeido(msgObjt, true, socket);
-    }
-
-    var fecha = new Date().toISOString().
-      replace(/T/, ' '). // replace T with a space
-      replace(/\..+/, '')
-    var Mensaje = {
-      date: fecha
-      , name: msgObjt.name
-      , msg: msgObjt.msg
-    }
-    //Guardamos cada mensaje en la room
-    Chat.findOneAndUpdate({
-      room_id: msgObjt.roomChat_id
-    }, {
-      $push: {
-        conversation: Mensaje
+      //Si es 2 ambas personas están conectadas
+      if (Object.keys(io.sockets.adapter.rooms[msgObjt.roomChat_id].sockets).length == 1) {
+        //Actualizamos noticacion en anuncio y candidato
+        updateStatusAnuncioLeido(msgObjt, true, socket);
+        LEIDO = false;
+      } else {
+        LEIDO = true;
       }
-    }, function (err, data) {
-      if (!err) {
-
-        if (data != null) {
+      var fecha = new Date().toISOString().
+        replace(/T/, ' '). // replace T with a space
+        replace(/\..+/, '')
+      var Mensaje = {
+        date: fecha
+        , name: msgObjt.name
+        , msg: msgObjt.msg
+        , leido: LEIDO
+      }
+      //Guardamos cada mensaje en la room
+      Chat.findOneAndUpdate({
+        room_id: msgObjt.roomChat_id
+      }, {
+        $push: {
+          conversation: Mensaje
+        }
+      }, function (err, data) {
+        if (!err && data != null) {
+          (LEIDO) ? callback({ status: 200 }) : callback({ status: 201 })
           socket.broadcast.in(msgObjt.roomChat_id).emit('message', {
             date: fecha
             , name: msgObjt.name
             , msg: msgObjt.msg
+            , update: false
           });
+
         }
-      }
-      else {
-        console.log('No se ha encontrado la room');
-      }
-    })
+        else {
+          console.log('No se ha encontrado la room');
+        }
+      });
+
+    }
+
   });
 
   //COMO HAGO PARA SABER SI ESTOY SOLO EN LA ROOM O NO

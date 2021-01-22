@@ -31,13 +31,13 @@ router.post('/add', function (req, res) {
     , tfl: ''
     , password: req.body.nameValuePairs.password
     , password_confirmation: req.body.nameValuePairs.password_confirmation
-    , descripcion: ''
+    , descrip: ''
     , valoracion: 0
     , Apublicados: []
     , Arecibidos: []
     , coord: {
-      lat: '0.0'
-      , lon: '0.0'
+      lat: "0.0"
+      , lon: "0.0"
     }
   });
   if (req.body.nameValuePairs.password == req.body.nameValuePairs.password_confirmation) {

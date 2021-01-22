@@ -20,9 +20,9 @@ router.post('/app', function (req, res, next) {
   var versionApp = req.body.nameValuePairs.VersionApp
   console.log('VersionApp ' + versionApp)
   var updateApp = false;
-  if(LastVersionApp == versionApp){
-    updateApp==false
-  }else{updateApp=true}
+  if (LastVersionApp == versionApp) {
+    updateApp == false
+  } else { updateApp = true }
   if (!updateApp) {
     User.findOne({
       '_id': req.id
@@ -45,7 +45,9 @@ router.post('/app', function (req, res, next) {
           });
         }
         else {
-          res.status(500);
+          res.status(500).json({
+            code: 500
+          });
         }
       }
     });
@@ -86,7 +88,7 @@ router.post('/getcommunity', function (req, res) {
   const DISTANCIA = 180000
   const idEmisor = req.id
   User.find({ $and: [{ firebase_token: { $ne: "" } }, { 'coord.lat': { $ne: "0.0" } }, { 'coord.lon': { $ne: "0.0" } }] }, (err, data) => {
-    
+
     if (!err && data != null) {
       var allUsers = []
       var userEmisor = {};
@@ -137,26 +139,26 @@ router.post('/getcommunity', function (req, res) {
           UsersNear[i].distance = Math.round(UsersNear[i].distance / 1000)
         } */
         if (UsersNear !== null && UsersNear.length !== 0) {
-          res.status(200).json({UsersNear});
+          res.status(200).json({ UsersNear });
         }
         else {
           console.log('No hay usuarios dentro del rango')
-          callback({
-            status: 502
+          res.status(501).json({
+            code: 501
           });
         }
       }
       else {
         console.log('No hemos podido obtener tu localización, intentalo de nuevo pasados unos minutos')
-        callback({
-          status: 501
+        res.status(500).json({
+          code: 500
         });
       }
     }
     else {
       console.log('Error desconocido, no encuentra ningún usuario')
-      callback({
-        status: 555
+      res.status(555).json({
+        code: 500
       });
     }
   })
@@ -207,9 +209,7 @@ router.post('/conversation', function (req, res) {
       if (dato != null) {
         //Aqui le enviamos toda la conversación para que la recargue en el recyclerview
         res.status(200).json({
-          mode: 'conversation'
-          , success: true
-          , conversation: dato.conversation //Enviamos toda la conversación
+           conversation: dato.conversation //Enviamos toda la conversación
         });
       }
       else res.status(300).json({
@@ -223,20 +223,22 @@ router.post('/updatelocation', function (req, res) {
   console.log('SIZE/updatelocation ' + req.socket.bytesRead);
   const lat = req.body.nameValuePairs.lat;
   const lon = req.body.nameValuePairs.lon;
-  User.findOneAndUpdate({
-    '_id': req.id
-  }, {
-    'coord': {
-      lat: lat
-      , lon: lon
-    }
-  }, function (err, Data) {
-    if (!err) {
-      //console.log(Data);
-      res.status(200);
-      console.log("Ubicación actualizada " + lat + ' ' + lon);
-    }
-  });
+
+    User.findOneAndUpdate({
+      '_id': req.id
+    }, {
+      'coord': {
+        lat: lat
+        , lon: lon
+      }
+    }, function (err, Data) {
+      if (!err) {
+        //console.log(Data);
+        res.status(200);
+        console.log("Ubicación actualizada " + lat + ' ' + lon);
+      }
+    });
+  
 });
 router.post('/updatedata', function (req, res) {
   console.log('SIZE/updatedata' + req.socket.bytesRead);

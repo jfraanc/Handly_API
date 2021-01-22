@@ -112,7 +112,7 @@ function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, an
             }
 
             var Anuncio_Emitido = {
-                idA: anuncio.idA
+              idA: anuncio.idA
               , idAnunciante: anuncio.idAnunciante
               , name: anuncio.name
               , peticion: false //false = Pendiente de aceptación, true aceptado
@@ -182,7 +182,7 @@ function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, an
             */
           }
           //Si encontramos usuarios cerca, adjuntamos al emisor y avisamos del ok, si no avisamos al emisor                       
-          anuncio.peticion= true
+          anuncio.peticion = true
           User.findOneAndUpdate({
             '_id': idEmisor
           }, {
@@ -221,10 +221,67 @@ function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, an
         status: 500
       });
     }
-  })
+  });
 };
 module.exports.findUsers = findUsers;
+function sendJobtoUser(idAnunciante, idCandidato, jsonAnuncio, callback) {
+  jsonAnuncio.peticion = false
+  jsonAnuncio.type = 13
+  jsonAnuncio.candidatos = []
+  User.findOneAndUpdate({
+    _id: idCandidato,
+    $and: [{ firebase_token: { $ne: "" } },
+    { 'coord.lat': { $ne: "0.0" } },
+    { 'coord.lon': { $ne: "0.0" } }]
+  },
+    {
+      $push: {
+        Arecibidos: jsonAnuncio
+      }
+    }, (err, data) => {
+      console.log('algoritmos sendtouser ' + data);
+      if (!err && data != null) {
+        console.log('Actualizado correctamente')
+        jsonAnuncio.peticion = true
+        jsonAnuncio.type = 7
+        User.findByIdAndUpdate({ _id: idAnunciante }, {
+          $push: {
+            Apublicados: jsonAnuncio
+          }
+        }, (Err, dato) => {
 
+          if (!Err && dato != null) {
+            callback({
+              status: 200
+            });
+            const message_notification = {
+              notification: {
+                title: data.name + " necesita ayuda con: ",
+                body: jsonAnuncio.titulo
+              }
+            };
+
+            adminFirebase.messaging().sendToDevice(data.firebase_token, message_notification, notification_options)
+              .then(response => {
+              })
+              .catch(error => {
+                console.log(error);
+              });
+          } else {
+            callback({
+              status: 500
+            });
+
+          }
+        })
+      } else {
+        callback({
+          status: 500
+        });
+      }
+    });
+}
+module.exports.sendJobtoUser = sendJobtoUser
 //Manejador de tratos entre los usuarios, y notificación
 function dealer(idInteresado, idA, Fecha, Hora, Distancia, callback) {
   const candidatos_max = 3
@@ -617,7 +674,7 @@ function getCandidato(token, idCandidato, callback) {
         '_id': idCandidato
       }, function (err, Data) {
         if (!err) {
-          console.log('avatar del candidato a consoultar ' + Data.avatar);
+          console.log('avatar del candidato a consultar ' + Data.avatar);
           callback({
             status: 200
             , avatar: Data.avatar
@@ -645,9 +702,7 @@ module.exports.getCandidato = getCandidato
 
 function updateStatusAnuncioLeido(obj, Notification, socket) {
 
-
-
-  if (!Notification) { //ESTAMOS DESCONECTADOS Y NOS UNIMOS A LA ROOM CHAT
+  if (!Notification) { //FALSE, ESTAMOS DESCONECTADOS Y NOS UNIMOS A LA ROOM CHAT
     obj.typeA == TYPE_ANUNCIO_EMITED ? TIPO = "Apublicados" : TIPO = "Arecibidos"
     obj.typeA == TYPE_ANUNCIO_RECEIVED ? TIPO = "Arecibidos" : TIPO = "Apublicados"
     console.log('ACTUALIZAR LEIDOS AL ENTRAR EN ROOM ' + "NOTIFICATION " + Notification + " tipo " + obj.typeA)
@@ -672,7 +727,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
 
 
         });
-    } else {
+    } else { //obj.typeA == TYPE_ANUNCIO_RECEIVED
       console.log("Es un anuncio recibido. Actualizando leido")
       jwt.verify(obj.token, 'ilovelondon', function (error, decoded) {
         if (!error) {
@@ -696,8 +751,8 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
       });
     }
 
-  } else { //ESTAMOS YA UNIDOS A LA ROOM CHAT Y MANDAMOS UN MENSAJE
-    //Si es true, significa que estamos mandando mensajes a una persona desconectada
+  } else { //TRUE, ESTAMOS YA UNIDOS A LA ROOM CHAT Y MANDAMOS UN MENSAJE
+    // significa que estamos mandando mensajes a una persona desconectada
     //Cuando el otro usuario esta desconectado
     obj.typeA == TYPE_ANUNCIO_EMITED ? TIPO = "Arecibidos" : TIPO = "Apublicados"
     obj.typeA == TYPE_ANUNCIO_RECEIVED ? TIPO = "Apublicados" : TIPO = "Arecibidos"
@@ -741,7 +796,7 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
                       });
                       */
                       //Enviamos una notificación a el usuario que no esta en la room_chat 
-                      //(pero como no sabemos si esta o no conectado lo enviamos)
+                      
                       const message_notification = {
                         notification: {
                           priority: "medium",
@@ -793,5 +848,27 @@ function updateStatusAnuncioLeido(obj, Notification, socket) {
 
 
 }
-
 module.exports.updateStatusAnuncioLeido = updateStatusAnuncioLeido;
+function updateMensajesLeidos(RoomID, senderName,socket) {
+
+  Chat.findOneAndUpdate({
+    room_id: RoomID
+  }, {
+    $set: { 'conversation.$[x].leido': true },
+    returnNewDocument: true
+  }, {
+    arrayFilters: [{ 'x.name': { $ne: senderName } }],
+    returnNewDocument: true
+  }
+    , function (err, dato) {
+      if (!err) {
+        if (dato != null) {
+          console.log('UpdateMSGleidos correcto')
+          socket.broadcast.in(RoomID).emit('message', {
+            update: true
+          });
+        }
+      }
+    });
+}
+module.exports.updateMensajesLeidos = updateMensajesLeidos;
