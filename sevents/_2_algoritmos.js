@@ -104,12 +104,12 @@ function findUsers(name, idEmisor, anuncio, coordEmisorFromPhone, socket, io, an
 
           for (var i = 0; i < UsersNear.length; i++) {
             //Reajustamos el anuncio en recibido Type=13 y le agregamos una clave de petición que es el estado de respuesta que el receptor da sobre el anuncio
-            var distanciaPorUsuario = ""
-            if (UsersNear[i].distance < 1000) {
+            var distanciaPorUsuario = UsersNear[i].distance
+            /* if (UsersNear[i].distance < 1000) {
               distanciaPorUsuario = "menos de 1 km"
             } else {
               distanciaPorUsuario = Math.round(UsersNear[i].distance / 1000) + " km"
-            }
+            } */
 
             var Anuncio_Emitido = {
               idA: anuncio.idA
