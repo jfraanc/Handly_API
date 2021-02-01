@@ -7,14 +7,14 @@ mongoose.set('useUnifiedTopology', true);
 var Schema = mongoose.Schema;
 
 //CONECTION DB
-// var options = {
-//   user: 'Admin',
-//   pass: 'Camiloseven77*',
-//   useNewUrlParser: true
-// }
-//var uri ='mongodb+srv://Admin:<Camiloseven77*>@handly.fgrux.gcp.mongodb.net/<Handly>?retryWrites=true&w=majority'
-var uri = 'mongodb://127.0.0.1:27017/handly'
-mongoose.connect(uri,/* options,*/ function (err) {
+var options = {
+  user: 'Admin',
+  pass: 'Camiloseven77*',
+  useNewUrlParser: true
+}
+var uri ='mongodb+srv://Admin:<Camiloseven77*>@handly.fgrux.gcp.mongodb.net/<Handly>?retryWrites=true&w=majority'
+//var uri = 'mongodb://127.0.0.1:27017/handly'
+mongoose.connect(uri,options, function (err) {
   (err) ? console.log(err) : console.log('conectado a DB-> ');
 });
 
