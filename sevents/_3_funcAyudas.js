@@ -1,6 +1,6 @@
 const util = require('util');
-var url_api = 'http://localhost:3000/';
-//var url_api = 'https://handlyapi.herokuapp.com/';
+//var url_api = 'http://localhost:3000/';
+var url_api = 'https://handlyapi.herokuapp.com/';
 function findPost(obj, key, key_val) {
   for (var i = 0; i < obj.length; i++) {
     if (obj[i][key] == key_val) {
@@ -46,15 +46,17 @@ module.exports.getUsersNear = getUsersNear
  //Enviar mail confirmation
   function sendMailConfirm(tokenEmail, email) {
     var nodemailer = require('nodemailer');
-    var transporter = nodemailer.createTransport({
-      service: 'hotmail'
-      , auth: {
-        user: 'handly.ask@outlook.com'
-        , pass: 'j2u4a9n2'
-      }
+    let transporter = nodemailer.createTransport({
+      host: 'smtp.zoho.eu',
+      secure: true,
+      port: 465,
+      auth: {
+        user: 'j.fraanc@gmail.com',
+        pass: 'j2u4a9n2',
+      },
     });
     const mailOptions = {
-      from: 'handly.ask@outlook.com', // sender address
+      from: 'hola@handly.io', // sender address
       to: email, // list of receivers
       subject: 'Activar cuenta Handly', // Subject line
       html:' <h7> H A N D L Y APP </h7>'+
@@ -70,15 +72,17 @@ module.exports.sendMailConfirm = sendMailConfirm
 //Enviar email con nueva contraseña
 function sendMailNewPass(email,newPass) {
   var nodemailer = require('nodemailer');
-  var transporter = nodemailer.createTransport({
-    service: 'hotmail'
-    , auth: {
-      user: 'handly.ask@outlook.com'
-      , pass: 'j2u4a9n2'
-    }
+  let transporter = nodemailer.createTransport({
+    host: 'smtp.zoho.eu',
+    secure: true,
+    port: 465,
+    auth: {
+      user: 'j.fraanc@gmail.com',
+      pass: 'j2u4a9n2',
+    },
   });
   const mailOptions = {
-    from:'handly.ask@outlook.com', // sender address
+    from:'hola@handly.io', // sender address
     to: email, // list of receivers
     subject: 'Activar cuenta Handly', // Subject line
     html:
