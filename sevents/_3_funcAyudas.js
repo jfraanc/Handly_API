@@ -84,7 +84,7 @@ function sendMailNewPass(email,newPass) {
   const mailOptions = {
     from:'hola@handly.io', // sender address
     to: email, // list of receivers
-    subject: 'Activar cuenta Handly', // Subject line
+    subject: 'Contraseña actualizada', // Subject line
     html:
     ' <h7> H A N D L Y APP </h7>'+
     '<h4>Esta es tu nueva contraseña (te recomendamos que actualizes tu contraseña en la sección de ajustes de tu perfil):</h4><HR><h1>'+newPass+'</h1>'
