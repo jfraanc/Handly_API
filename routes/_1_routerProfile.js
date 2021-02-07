@@ -1,5 +1,5 @@
 /* Aqui hacemos todas operaciones de publicación, actualización o eliminación de anuncios así como la actualización del profile del usuario */
-const LastVersionApp = 5.1
+const LastVersionApp = 5.2
 var express = require('express');
 var router = express.Router();
 var User = require('../models/db').User;
