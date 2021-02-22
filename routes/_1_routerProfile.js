@@ -34,6 +34,7 @@ router.post('/app', function (req, res, next) {
             , socket_id: Data.socket_id
             , avatar: Data.avatar
             , name: Data.name
+            , profesion: Data.profesion
             , email: Data.email
             , emailConfirmation: Data.emailConfirmation
             , tfl: Data.tfl
@@ -112,10 +113,25 @@ router.post('/getcommunity', function (req, res) {
         for (var i = 0; i < data.length && userEmisorCheckCoord == true; i++) {
 
           if (data[i]._id != idEmisor) {
+            
+            var rateGlobal = 0
+            if (data[i].valoracion.length !=0){
+              for(var x = 0; x <data[i].valoracion.length;x++){
+                rateGlobal = rateGlobal + parseInt(data[i].valoracion[x].feedback_rate);
+              }
+              
+              rateGlobal = rateGlobal / data[i].valoracion.length
+              rateGlobal = Math.round(rateGlobal * 10.0) / 10.0;
+            }else{
+              rateGlobal = 0
+            }
+            
             var userReceiver = {
               _id: data[i]._id
               , avatar: data[i].avatar
               , nombre: data[i].name
+              , profesion: data[i].profesion
+              , feedback_rate: rateGlobal
               , descrip: data[i].descrip
               , latitude: data[i].coord.lat
               , longitude: data[i].coord.lon
@@ -247,6 +263,7 @@ router.post('/updatedata', function (req, res) {
   }, {
     'descrip': req.body.nameValuePairs.description
     , 'tfl': req.body.nameValuePairs.telefono
+    , 'profesion': req.body.nameValuePairs.profesion
   }, function (err, Data) {
     if (!err && Data) {
       //console.log(Data);

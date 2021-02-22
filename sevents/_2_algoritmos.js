@@ -679,6 +679,7 @@ function getCandidato(token, idCandidato, callback) {
             status: 200
             , avatar: Data.avatar
             , name: Data.name
+            , profesion: Data.profesion
             , descripcion: Data.descrip
             , Arecibidos: Data.Arecibidos.length
             , Apublicados: Data.Apublicados.length

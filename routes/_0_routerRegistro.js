@@ -26,13 +26,14 @@ router.post('/add', function (req, res) {
     , firebase_token: req.body.nameValuePairs.firebaseToken
     , avatar: ''
     , name: req.body.nameValuePairs.name
+    , profesion: req.body.nameValuePairs.profesion
     , email: req.body.nameValuePairs.email
     , emailConfirmation: false
     , tfl: ''
     , password: req.body.nameValuePairs.password
     , password_confirmation: req.body.nameValuePairs.password_confirmation
     , descrip: ''
-    , valoracion: 0
+    , valoracion: []
     , Apublicados: []
     , Arecibidos: []
     , coord: {

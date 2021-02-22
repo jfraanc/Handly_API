@@ -7,7 +7,7 @@ mongoose.set('useUnifiedTopology', true);
 var Schema = mongoose.Schema;
 
 //CONECTION DB
-var useLocal = false;
+var useLocal = true;
 if(useLocal){
   const uri = 'mongodb://127.0.0.1:27017/handly'
   mongoose.connect(uri,function (err) {
@@ -37,6 +37,7 @@ var userSchemaJson = {
   name: String,
   email: String,
   emailConfirmation: Boolean,
+  profesion: String,
   tfl: String,
   descrip: String,
   valoracion: [],
