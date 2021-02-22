@@ -7,7 +7,7 @@ mongoose.set('useUnifiedTopology', true);
 var Schema = mongoose.Schema;
 
 //CONECTION DB
-var useLocal = true;
+var useLocal = false;
 if(useLocal){
   const uri = 'mongodb://127.0.0.1:27017/handly'
   mongoose.connect(uri,function (err) {
