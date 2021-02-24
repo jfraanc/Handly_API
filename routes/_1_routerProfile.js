@@ -19,10 +19,10 @@ router.post('/app', function (req, res, next) {
   console.log('SIZE/app ' + req.socket.bytesRead);
   var versionApp = req.body.nameValuePairs.VersionApp
   console.log('VersionApp ' + versionApp)
-  var updateApp = false;
-  if (LastVersionApp == versionApp) {
+  var updateApp = true; //false
+  /* if (LastVersionApp == versionApp) {
     updateApp == false
-  } else { updateApp = true }
+  } else { updateApp = true } */
   if (!updateApp) {
     User.findOne({
       '_id': req.id
