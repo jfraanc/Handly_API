@@ -19,7 +19,7 @@ router.post('/app', function (req, res, next) {
   console.log('SIZE/app ' + req.socket.bytesRead);
   var versionApp = req.body.nameValuePairs.VersionApp
   console.log('VersionApp ' + versionApp)
-  var updateApp = true; //false
+  var updateApp = false; 
   /* if (LastVersionApp == versionApp) {
     updateApp == false
   } else { updateApp = true } */
