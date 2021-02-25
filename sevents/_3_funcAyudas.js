@@ -87,7 +87,7 @@ function sendMailNewPass(email,newPass) {
     subject: 'Contraseña actualizada', // Subject line
     html:
     ' <h7> H A N D L Y APP </h7>'+
-    '<h4>Esta es tu nueva contraseña (te recomendamos que actualizes tu contraseña en la sección de ajustes de tu perfil):</h4><HR><h1>'+newPass+'</h1>'
+    '<h4>Esta es tu nueva contraseña (te recomendamos que cambies tu contraseña en la sección de ajustes de tu perfil):</h4><HR><h1>'+newPass+'</h1>'
   };
   transporter.sendMail(mailOptions, function (err, info) {
     if (err) console.log('_3_funcAyudas error en mail al enviar nueva contraseña ' + err);
