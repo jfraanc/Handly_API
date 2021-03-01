@@ -1,6 +1,6 @@
 {
     "version": 2,
-    "name": "handly-api
+    "name": "handly-api"
 ,
     "builds": [
       { "src": "app.js", "use": "@vercel/node" }
