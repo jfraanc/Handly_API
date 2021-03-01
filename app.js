@@ -10,7 +10,8 @@ var session_middleware_profile=require('./middlewares/session_profile');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-
+var SocketIOevents = require('./sevents/_1_realtime').SocketIOevents
+SocketIOevents(io);
 console.log('INICIANDO API')
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));

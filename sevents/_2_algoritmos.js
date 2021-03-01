@@ -6,7 +6,7 @@ var Chat = require('../models/db').chat; //Collection chat conversaciones
 var jwt = require('jsonwebtoken'); // Para Desencriptar el token
 const { object } = require('underscore');
 const { ObjectId } = require('mongodb');
-var adminFirebase = require('../sevents/_4_firebase_config').admin; //Para enviar notificaciones
+var adminFirebase = require('./_4_firebase_config').admin; //Para enviar notificaciones
 //Ponemos todas las notificaiones en alta prioridad
 const notification_options = {
   defaultSound: true,
