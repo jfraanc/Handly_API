@@ -1,11 +1,11 @@
 {
-    "version": 3,
+    "version": 2,
     "name": "handly-api"
 ,
     "builds": [
-      { "src": "./bin/www", "use": "@vercel/node" }
+      { "src": "app.js", "use": "@vercel/node" }
     ],
     "routes": [
-      { "src": "/(.*)", "dest": "/" }
+      { "src": "/(.*)", "dest": "/app.js" }
     ]
   }
