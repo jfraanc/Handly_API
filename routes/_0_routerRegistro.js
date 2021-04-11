@@ -179,8 +179,8 @@ router.get('/mailcnf/:id', function (req, res) {
           }
           else if (USUARIO) {
 
-            //res.redirect('http://handly.io/mailconfirm')
-            res.redirect('https://media1.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif')
+            res.redirect('http://handly.io/mailconfirm')
+            //res.redirect('https://media1.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif')
           }
         } else {
           console.log("ROUTER REGISTRO ERROR MAIL CONFIRM-> " + err);

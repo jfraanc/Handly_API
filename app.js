@@ -10,9 +10,8 @@ var session_middleware_profile=require('./middlewares/session_profile');
 var app = express();
 var server = require('http').Server(app);
 var io = require('socket.io')(server);
-var SocketIOevents = require('./sevents/_1_realtime').SocketIOevents
-SocketIOevents(io);
-console.log('INICIANDO API')
+require('./sevents/_1_realtime').SocketIOevents(io)
+
 // view engine setup
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'ejs');
@@ -27,7 +26,7 @@ app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(cookieParser());
-app.use(express.static(path.join(__dirname, 'public'))); //Esto enviaría toda la parte pública
+//app.use(express.static(path.join(__dirname, 'public'))); //Esto enviaría toda la parte pública
 
 
 //Cookies
