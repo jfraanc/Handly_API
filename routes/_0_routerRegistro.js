@@ -28,7 +28,7 @@ router.post('/add', function (req, res) {
     , name: req.body.nameValuePairs.name
     , profesion: req.body.nameValuePairs.profesion
     , email: req.body.nameValuePairs.email
-    , emailConfirmation: false
+    , emailConfirmation: true
     , tfl: ''
     , password: req.body.nameValuePairs.password
     , password_confirmation: req.body.nameValuePairs.password_confirmation
@@ -179,8 +179,8 @@ router.get('/mailcnf/:id', function (req, res) {
           }
           else if (USUARIO) {
 
-            //res.redirect('http://handly.io/mailconfirm')
-            res.redirect('https://media1.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif')
+            res.redirect('http://handly.io/mailconfirm')
+            //res.redirect('https://media1.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif')
           }
         } else {
           console.log("ROUTER REGISTRO ERROR MAIL CONFIRM-> " + err);

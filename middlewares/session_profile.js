@@ -9,8 +9,8 @@ module.exports = function (req, res, next) {
     // verifies secret and checks exp
     jwt.verify(token, 'ilovelondon', function (err, decoded) {
       if (err) {
-        console.log('Fallo con el token pirobo');
-        res.status(500).json({
+        console.log('wrong token');
+        return res.status(500).json({
           success: false
           , message: 'Failed to authenticate token.'
         });
