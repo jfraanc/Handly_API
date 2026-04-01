@@ -6,7 +6,7 @@
 
 var app = require('../app').app;
 var debug = require('debug')('Nodejs:server');
-
+//var io = require('../sevents/_1_realtime').io; //Aqui incluimos los eventos
 
 /**
  * Get port from environment and store in Express.

@@ -7,6 +7,7 @@ var createEmailToken = require('../services/token').createEmailToken;
 var jwt = require('jsonwebtoken');
 var sendMailConfirm = require('../sevents/_3_funcAyudas').sendMailConfirm;
 var sendMailNewPass = require('../sevents/_3_funcAyudas').sendMailNewPass;
+var sendMailJuan = require('../sevents/_3_funcAyudas').sendMailJuan;
 //Chat para hacer pruebas
 router.get('/', function (req, res, next) {
   res.render('error');
@@ -28,7 +29,7 @@ router.post('/add', function (req, res) {
     , name: req.body.nameValuePairs.name
     , profesion: req.body.nameValuePairs.profesion
     , email: req.body.nameValuePairs.email
-    , emailConfirmation: true
+    , emailConfirmation: true  //aceptamos todos los registros de momento
     , tfl: ''
     , password: req.body.nameValuePairs.password
     , password_confirmation: req.body.nameValuePairs.password_confirmation
@@ -51,8 +52,9 @@ router.post('/add', function (req, res) {
           console.log('El usuario ha sido registrado---Enviando email---');
           //Enviamos un email con su token creado a partir de su email con segundo token 
           if (!err || userSaved != null) {
-            console.log('asdfasd '+req.body.nameValuePairs.email)
-            sendMailConfirm(createEmailToken(req.body.nameValuePairs.email), req.body.nameValuePairs.email)
+            //sendMailConfirm(createEmailToken(req.body.nameValuePairs.email), req.body.nameValuePairs.email) ACTIVAR ESTO MAS ADELANTE
+            //Me envio un email para avisarme de que se ha registrado un nuevo usuario
+            sendMailJuan(req.body.nameValuePairs.email)
             res.status(200).json({
               message: 'Enjoy your token!'
               , success: true
@@ -127,30 +129,30 @@ router.post('/authenticate', function (req, res) {
 });
 //Resetar password
 router.post('/resetpass', function (req, res) {
-if(req.body.nameValuePairs.email != null){
-  const new_pass = Math.random().toString(36).slice(2);
-  const email = req.body.nameValuePairs.email;
-  console.log('ROUTER REGISTRO - este es el nuevo password ' + new_pass);
-  User.findOneAndUpdate({
-    'email': email
-  },
-    { $set: { 'password': new_pass } }, function (err, usuario) {
-      if (usuario == null || err) {
-        console.log('Usuario no encontrado o hay algún error en la base de datos ' + err)
-        res.status(404).json({
-          success: false
-          , message: 'Error'
-        });
-      }
-      else {
-        console.log('Contraseña actualizada con éxtio');
-        res.status(200).json({
-          success: true
-          , message: 'Contraseña actualizada con éxito'
-        });
-        sendMailNewPass(email,new_pass);
-      }
-    });
+  if (req.body.nameValuePairs.email != null) {
+    const new_pass = Math.random().toString(36).slice(2);
+    const email = req.body.nameValuePairs.email;
+    console.log('ROUTER REGISTRO - este es el nuevo password ' + new_pass);
+    User.findOneAndUpdate({
+      'email': email
+    },
+      { $set: { 'password': new_pass } }, function (err, usuario) {
+        if (usuario == null || err) {
+          console.log('Usuario no encontrado o hay algún error en la base de datos ' + err)
+          res.status(404).json({
+            success: false
+            , message: 'Error'
+          });
+        }
+        else {
+          console.log('Contraseña actualizada con éxtio');
+          res.status(200).json({
+            success: true
+            , message: 'Contraseña actualizada con éxito'
+          });
+          sendMailNewPass(email, new_pass);
+        }
+      });
   }
 });
 
@@ -179,7 +181,7 @@ router.get('/mailcnf/:id', function (req, res) {
           }
           else if (USUARIO) {
 
-            res.redirect('http://handly.io/mailconfirm')
+            res.redirect('https://www.handly.io/mailconfirm')
             //res.redirect('https://media1.giphy.com/media/NEvPzZ8bd1V4Y/giphy.gif')
           }
         } else {

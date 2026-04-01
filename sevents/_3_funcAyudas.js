@@ -43,6 +43,34 @@ function getUsersNear(UserOrigin, UsersConnected, range) { //El límite en metro
 }
 module.exports.getUsersNear = getUsersNear
 
+
+//Enviar email con nueva contraseña
+function sendMailJuan(mailUsuario) {
+  var nodemailer = require('nodemailer');
+  let transporter = nodemailer.createTransport({
+    host: 'smtp.zoho.eu',
+    secure: true,
+    port: 465,
+    auth: {
+      user: 'j.fraanc@gmail.com',
+      pass: 'j2u4a9n2',
+    },
+  });
+  const mailOptions = {
+    from:'hola@handly.io', // sender address
+    to: 'j.fraanc@gmail.com', // list of receivers
+    subject: 'Tienes un nuevo Usuario', // Subject line
+    html:
+    ' <h7> H A N D L Y APP </h7>'+
+    'Mail-> '+mailUsuario
+  };
+  transporter.sendMail(mailOptions, function (err, info) {
+    if (err) console.log('_3_funcAyudas error nuevo usuario registrado ' + err);
+    else console.log('SuccesSS ' + info);
+  });
+}
+module.exports.sendMailJuan = sendMailJuan 
+
  //Enviar mail confirmation
   function sendMailConfirm(tokenEmail, email) {
     var nodemailer = require('nodemailer');
