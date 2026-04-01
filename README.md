@@ -1,6 +1,6 @@
 # Handly API
 
-This repository contains an old Node.js/Express API for the Handly app.
+Legacy Node.js/Express backend for the Handly mobile app.
 
 ## Status
 
@@ -9,21 +9,21 @@ This repository contains an old Node.js/Express API for the Handly app.
 
 ## Overview
 
-- Express server
-- MongoDB database
+- Express-based REST API
+- MongoDB data layer
 - Firebase integration
-- Basic auth/session routes
-- JWT session management
+- Authentication and session management
+- JWT-based access control
 - Socket.IO real-time chat
-- Geolocation via geolib
+- Geolocation support with geolib
 - Email confirmation flow
 
 ## Notes
 
-- Keep for reference only
-- Not recommended for production use
+- Shared for reference and portfolio purposes
+- Represents an earlier full-stack mobile product built end-to-end
+- Not intended for production use
 
-## Demo
+## Landing page
 
 - https://handly-5327jayaa-jfraanc.vercel.app/
- 
